@@ -183,9 +183,12 @@ def buscar_producto_binaria(codigos, nombres, precios):
 
 
 # FUNCIONES BASE Y LOGIN
-def iniciar_sesion():
-    user = "admin"
-    password = "inventario2026"
+def buscar_usuario(usuarios, nombre_usuario):
+    # Busca un usuario por su nombre usando .get(), que devuelve el diccionario
+    # con sus datos si existe, o None si no existe.
+    return usuarios.get(nombre_usuario)
+
+def iniciar_sesion(usuarios):
  
     logged_in = False
     intentos = 0
@@ -195,17 +198,73 @@ def iniciar_sesion():
         input_user = input("Ingrese su usuario: ")
         input_password = input("Ingrese su contraseña: ")
  
-        if input_user == user and input_password == password:
+        user_data = buscar_usuario(usuarios, input_user)
+
+        # A partir de acá, la cadena de elif es excluyente: si user_data es None,
+        # ninguno de los elif siguientes se ejecuta. Por eso, para cuando llegamos
+        # al último elif, ya está garantizado que el usuario existe.
+        if user_data == None:
+            print("El usuario no existe. Intente nuevamente.\n")
+            intentos += 1
+        elif user_data["bloqueado"]:
+            print("El usuario está bloqueado. Contacte al administrador.\n")
+            intentos += 1
+        elif user_data["contrasena"] != input_password:
+            print("Contraseña incorrecta. Intente nuevamente.\n")
+            user_data["intentos_fallidos"] += 1
+            intentos += 1
+            if user_data["intentos_fallidos"] >= 3:
+                user_data["bloqueado"] = True
+                print("!!!!!!!! El usuario ha sido bloqueado por 3 intentos fallidos. !!!!!!!! \n")
+        elif user_data["contrasena"] == input_password:
+            # No hace falta validar el usuario de nuevo acá: si llegamos hasta este
+            # punto, ya sabemos que existe (se descartó en el primer if de arriba)
             print("Inicio de sesión exitoso. Bienvenido al sistema de inventario!")
             logged_in = True
-        else:
-            intentos += 1
-            if intentos < 3:
-                print("Usuario o contraseña incorrectos. Intente nuevamente.\n")
-            else:
-                print("Fallaste 3 intentos. Volvé a intentarlo más tarde.")
- 
-    return logged_in
+
+    if not logged_in:
+        print("<<<<<<<<<< Fallaste 3 intentos. Volvé a intentarlo más tarde. >>>>>>>>>>\n")
+
+    return user_data if logged_in else None
+
+
+def listar_usuarios_bloqueados(usuarios):
+    encontrado = False;
+
+    print("\n --- USUARIOS BLOQUEADOS ---")
+    for nombre_usuario, datos in zip(usuarios.keys(), usuarios.values()):
+        if datos["bloqueado"]:
+            encontrado = True
+            print("Usuario:", nombre_usuario, "| Rol:", datos["rol"], "| Intentos fallidos:", datos["intentos_fallidos"])
+    if not encontrado:
+        print("No hay usuarios bloqueados.")
+
+def desbloquear_usuario(usuarios, nombre_usuario):
+    user_data = buscar_usuario(usuarios, nombre_usuario)
+
+    if user_data is None:
+        print("Error: El usuario no existe.")
+        return
+    elif user_data["bloqueado"]:
+        user_data["bloqueado"] = False
+        user_data["intentos_fallidos"] = 0
+        print(f"Usuario '{nombre_usuario}' desbloqueado exitosamente.")
+
+def administrar_usuarios_bloqueados(usuarios):
+    # Muestra los usuarios bloqueados y permite al admin desbloquear a uno,
+    # o escribir 'volver' para salir sin hacer nada.
+    listar_usuarios_bloqueados(usuarios)
+    nombre_usuario = pedir_texto("\nIngrese el nombre de usuario a desbloquear (o 'volver' para cancelar): ")
+    if nombre_usuario.lower() == "volver":
+        return
+    desbloquear_usuario(usuarios, nombre_usuario)
+
+
+# DATOS HARDCODEADOS DE USUARIOS (diccionario anidado: usuario -> datos del usuario)
+usuarios = {
+    "admin": {"contrasena": "inventario2026", "rol": "admin", "intentos_fallidos": 0, "bloqueado": False},
+    "lzanino": {"contrasena": "clave123", "rol": "usuario", "intentos_fallidos": 0, "bloqueado": False},
+}
 
 #  DATOS HARDCODEADOS (LISTAS PARALELAS)
 # Los códigos ahora tienen formato alfanumérico validable por RE:
@@ -621,23 +680,27 @@ def mostrar_etiquetas_productos(nombres):
     for i in range(len(nombres)):
         print(nombres[i], "->", etiquetas[i])
 # PROGRAMA PRINCIPAL (MENÚ)
-logged_in = iniciar_sesion()
+logged_in = iniciar_sesion(usuarios)
+rol_actual = logged_in["rol"] if logged_in else None
 
 opcion_menu = 1
 opcion_submenu_categoria = 1
 opcion_submenu_inventario = 1
 opcion_submenu_consultas = 1
 
-if logged_in: 
+if logged_in:
     while opcion_menu != 999:
         print("\nElija una de las siguientes opciones:")
         print("(1) ABM de producto")
         print("(2) ABM de categoria")
         print("(3) ABM de inventario")
         print("(4) Realizar consultas sobre el stock")
+        if rol_actual == "admin":
+            print("(5) Administración de usuarios bloqueados")
         print("(0) Salir del sistema")
-        
-        opcion_menu = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
+
+        opcion_maxima = 5 if rol_actual == "admin" else 4
+        opcion_menu = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, opcion_maxima)
 
         if opcion_menu == 0:
             print("Quiere salir de la app?")
@@ -744,5 +807,7 @@ if logged_in:
                      consulta_por_deposito(inv_codigos, inv_depositos, inv_codigos_prod, inv_cantidades)
                 elif opcion_submenu_consultas == 4:
                     consulta_unidades_categoria_deposito(inv_codigos, inv_codigos_cat, inv_codigos_prod, inv_cantidades, inv_depositos)
-    
+        elif opcion_menu == 5:
+            administrar_usuarios_bloqueados(usuarios)
+
     print("\nSaliendo del sistema. ¡Gracias por usarlo!")
