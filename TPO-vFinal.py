@@ -534,6 +534,7 @@ def generar_reporte_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_dep
     # 'reduce' junta todas las líneas en un unico string, separadas por salto de línea
     reporte = reduce(lambda acumulado, linea: acumulado + "\n" + linea, lineas)
     return "\n--- LISTA DE INVENTARIO ---\n" + reporte
+
 # CONSULTAS
 def consulta_productos_en_stock(productos, inventario):
     prod_codigos = productos["codigos"]  
@@ -553,6 +554,51 @@ def consulta_productos_en_stock(productos, inventario):
         # ↑ REDUCE: recorremos la lista de cantidades sumándolas de a una, empezando
         # el acumulador en 0, hasta quedarnos con un único número final
         print("Producto:", prod_nombres[p], "- Unidades en stock:", total)  # Mostramos el resultado de este producto
+
+
+def calcular_valor_stock_por_categoria(inventario, productos, categorias):
+    
+    total = {} #Se crea un diccionario vacio para luego guardar los datos 
+                #de cada categoria y su valor de stock correspondiente
+
+    #Se recorre el inventario y se busca el indice del producto
+    # y de la categoria en sus respectivas listas
+    for i in range(len(inventario["codigos"])):
+        buscar_indice_prod = buscar_indice(productos["codigos"], inventario["codigos_prod"][i])
+        buscar_indice_cat = buscar_indice(categorias["codigos"], inventario["codigos_cat"][i])
+
+
+        #Si ambos indices son validos, se calcula el valor del stock de ese producto
+        if buscar_indice_prod != -1 and buscar_indice_cat != -1:
+            precio_producto = productos["precios"][buscar_indice_prod]
+            recargo_categoria = categorias["recargos"][buscar_indice_cat]
+            cantidad = inventario["cantidades"][i]
+
+            valor_stock = cantidad * precio_producto * (1 + recargo_categoria / 100)
+
+            if inventario["codigos_cat"][i] in total:
+                total[inventario["codigos_cat"][i]] += valor_stock
+            else:
+                total[inventario["codigos_cat"][i]] = valor_stock
+
+    return total
+
+def mostrar_valor_stock_por_categoria(inventario, productos, categorias):
+    valores = calcular_valor_stock_por_categoria(inventario, productos, categorias)
+    
+    if not valores:
+        print("No hay stock registrado en ninguna categoría.")
+    else:
+        print("\n--- VALOR TOTAL DE STOCK POR CATEGORÍA ---")
+        
+        #Por cada vuelta, se busca el índice de la categoría en la lista 
+        # de códigos de categorías para luego obtener su nombre correspondiente.
+        # Una vez obtenido el nombre, se imprime el código, nombre y valor total de stock de esa categoría
+        for cat_codigo, valor in valores.items():
+            cat_indice = buscar_indice(categorias["codigos"], cat_codigo)
+            cat_nombre = categorias["nombres"][cat_indice] if cat_indice != -1 else "Desconocida"
+            
+            print(f"Categoría: {cat_codigo} - {cat_nombre} | Valor total de stock: ${valor:.2f}")
 
 def consulta_por_categoria(categoria, inventario):
     cat_codigos = categoria["codigos"]  
@@ -697,6 +743,8 @@ def mostrar_etiquetas_productos(nombres):
     print("\n--- ETIQUETAS DE PRODUCTOS ---")
     for i in range(len(nombres)):
         print(nombres[i], "->", etiquetas[i])
+
+
 # PROGRAMA PRINCIPAL (MENÚ)
 logged_in = iniciar_sesion(usuarios)
 rol_actual = logged_in["rol"] if logged_in else None
@@ -813,9 +861,10 @@ if logged_in:
                 print("(2) Ver categorías con stock")
                 print("(3) Ver depósitos con stock")
                 print("(4) Cantidad total de unidades por categoría y depósito")
+                print("(5) Ver valor total de stock por categoría")
                 print("(0) Volver atrás")
                 
-                opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 4)
+                opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 5)
                 
                 if opcion_submenu_consultas == 1:
                     consulta_productos_en_stock(productos, inventario)
@@ -825,6 +874,8 @@ if logged_in:
                      consulta_por_deposito(inv_codigos, inv_depositos, inv_codigos_prod, inv_cantidades)
                 elif opcion_submenu_consultas == 4:
                     consulta_unidades_categoria_deposito(inv_codigos, inv_codigos_cat, inv_codigos_prod, inv_cantidades, inv_depositos)
+                elif opcion_submenu_consultas == 5:
+                    mostrar_valor_stock_por_categoria(inventario, productos, categorias)
         elif opcion_menu == 5:
             administrar_usuarios_bloqueados(usuarios)
 
