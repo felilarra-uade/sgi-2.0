@@ -284,10 +284,28 @@ inv_codigos_cat = ["CAT-01", "CAT-02", "CAT-03", "CAT-01", "CAT-05", "CAT-03", "
 inv_cantidades = [50, 200, 100, 30, 150, 80, 45, 120, 90, 15]
 inv_depositos = [1, 1, 2, 1, 3, 2, 1, 2, 1, 3]
 
-# MATRICES (cada elemento es una columna = una lista paralela ya cargada)
-columnas_prod = [prod_codigos, prod_nombres, prod_precios]
-columnas_cat = [cat_codigos, cat_nombres, cat_recargos, cat_estados]
-columnas_inv = [inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos]
+
+# DICCIONARIO DE LISTAS
+productos = {
+    "codigos": prod_codigos,
+    "nombres": prod_nombres,
+    "precios": prod_precios
+}
+
+categorias = {
+    "codigos": cat_codigos,
+    "nombres": cat_nombres,
+    "recargos": cat_recargos,
+    "estados": cat_estados
+}
+
+inventario = {
+    "codigos": inv_codigos,
+    "codigos_prod": inv_codigos_prod,
+    "codigos_cat": inv_codigos_cat,
+    "cantidades": inv_cantidades,
+    "depositos": inv_depositos
+}
 
 # FUNCIONES CRUD 
 # PRODUCTOS
@@ -517,11 +535,11 @@ def generar_reporte_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_dep
     reporte = reduce(lambda acumulado, linea: acumulado + "\n" + linea, lineas)
     return "\n--- LISTA DE INVENTARIO ---\n" + reporte
 # CONSULTAS
-def consulta_productos_en_stock(columnas_prod, columnas_inv):
-    prod_codigos = columnas_prod[0]  # Extraemos la columna 0 de la matriz de productos: los códigos
-    prod_nombres = columnas_prod[1]  # Extraemos la columna 1: los nombres de los productos
-    inv_prods = columnas_inv[1]      # De la matriz de inventario, columna 1: a qué producto pertenece cada fila
-    inv_cants = columnas_inv[3]      # De la matriz de inventario, columna 3: cantidad de unidades de cada fila
+def consulta_productos_en_stock(productos, inventario):
+    prod_codigos = productos["codigos"]  
+    prod_nombres = productos["nombres"]  
+    inv_prods = inventario["codigos_prod"]     
+    inv_cants = inventario["cantidades"]      
     print("\n--- PRODUCTOS EN STOCK ---")  # Encabezado del reporte
     for p in range(len(prod_codigos)):  # Recorremos cada producto uno por uno, usando su índice p
         codigo_actual = prod_codigos[p]  # Guardamos el código del producto actual para no repetir el acceso
@@ -536,14 +554,14 @@ def consulta_productos_en_stock(columnas_prod, columnas_inv):
         # el acumulador en 0, hasta quedarnos con un único número final
         print("Producto:", prod_nombres[p], "- Unidades en stock:", total)  # Mostramos el resultado de este producto
 
-def consulta_por_categoria(columnas_cat, columnas_inv):
-    cat_codigos = columnas_cat[0]   # Extraemos la columna 0 de la matriz de categorías: los códigos
-    cat_nombres = columnas_cat[1]   # Extraemos la columna 1: los nombres de categoría
-    inv_cods = columnas_inv[0]      # De la matriz de inventario, columna 0: los códigos de cada registro
-    inv_prods = columnas_inv[1]     # Columna 1: a qué producto pertenece cada fila
-    inv_cats = columnas_inv[2]      # Columna 2: a qué categoría pertenece cada fila
-    inv_cants = columnas_inv[3]     # Columna 3: cantidad de unidades de cada fila
-    inv_deps = columnas_inv[4]      # Columna 4: en qué depósito está cada fila
+def consulta_por_categoria(categoria, inventario):
+    cat_codigos = categoria["codigos"]  
+    cat_nombres = categoria["nombres"]   
+    inv_cods = inventario["codigos"]      
+    inv_prods = inventario["codigos_prod"]    
+    inv_cats = inventario["codigos_cat"]      
+    inv_cants = inventario["cantidades"]     
+    inv_deps = inventario["depositos"]      
 
     cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00): ", "CAT", 2)  # Pedimos y validamos el formato del código
 
@@ -800,9 +818,9 @@ if logged_in:
                 opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 4)
                 
                 if opcion_submenu_consultas == 1:
-                    consulta_productos_en_stock(columnas_prod, columnas_inv)
+                    consulta_productos_en_stock(productos, inventario)
                 elif opcion_submenu_consultas == 2:
-                    consulta_por_categoria(columnas_cat, columnas_inv)
+                    consulta_por_categoria(categorias, inventario)
                 elif opcion_submenu_consultas == 3:
                      consulta_por_deposito(inv_codigos, inv_depositos, inv_codigos_prod, inv_cantidades)
                 elif opcion_submenu_consultas == 4:
