@@ -1,6 +1,7 @@
 import re
 from functools import reduce
-# FUNCIONES DE VALIDACIÓN
+
+# VALIDACIONES DE INPUT
 # Usamos try-except para atajar el error si el usuario ingresa un string en vez de un número.
 def es_entero(var_str):
     try:
@@ -15,7 +16,7 @@ def es_float(var_str):
         return True 
     except:
         return False
-    
+
 # Usada para validar las opciones de menú, asegurando que el usuario ingrese un número dentro del rango permitido.
 def solicitar_opcion_menu(mensaje, min_opcion, max_opcion):
     dato = input(mensaje)
@@ -78,6 +79,20 @@ def pedir_codigo(mensaje, prefijo, cant_digitos):
         dato = input(mensaje).strip()
     return dato
 
+# PROCESAMIENTO AVANZADO DE CADENAS DE CARACTERES (Lautaro Zanino)
+def nombre_duplicado(nombres, nombre_nuevo):
+    # Normaliza el nombre nuevo sin espacios y en minúsculas y lo compara contra
+    # cada nombre existente en la lista, normalizado de la misma forma, de esta manera se detectan
+    # duplicados aunque difieran en mayúsculas/minúsculas o espacios
+    nuevo_nombre_normalizado = nombre_nuevo.strip().lower()
+
+    for i in range(len(nombres)):
+        if nombres[i].strip().lower() == nuevo_nombre_normalizado:
+            return True
+    return False
+
+
+# ALGORITMOS GENÉRICOS SOBRE LISTAS PARALELAS
 # ORDENAMIENTOS (Readaptación)
 """
 Originalmente había tres ordenamientos distintos (burbuja, selección e inserción), uno para cada entidad.
@@ -107,6 +122,16 @@ def ordenar_listas_paralelas(listas, indice_clave):
         for k in range(n):
             listas[j][k] = listas_ordenadas[j][k]
 
+# Búsqueda secuencial: recorre la lista elemento por elemento hasta encontrar el código buscado.
+def buscar_indice(lista_codigos, codigo_buscado):
+    # Iteramos sobre cada posición de la lista
+    for i in range(len(lista_codigos)):
+        # Si encontramos el código buscado, retornamos su índice
+        if lista_codigos[i] == codigo_buscado:
+            return i 
+    # Si no encontramos el código, retornamos -1
+    return -1 
+
 # Búsqueda binaria: Divide el espacio de búsqueda por la mitad en cada iteración, requiere que la lista esté ordenada previamente.
 # Readaptada para trabajar con Strings en lugar de enteros.
 def busqueda_binaria(lista_codigos, codigo_buscado):
@@ -132,134 +157,8 @@ def busqueda_binaria(lista_codigos, codigo_buscado):
     # Si no encontramos el elemento, retornamos -1
     return -1
 
-# Búsqueda secuencial: recorre la lista elemento por elemento hasta encontrar el código buscado.
-def buscar_indice(lista_codigos, codigo_buscado):
-    # Iteramos sobre cada posición de la lista
-    for i in range(len(lista_codigos)):
-        # Si encontramos el código buscado, retornamos su índice
-        if lista_codigos[i] == codigo_buscado:
-            return i 
-    # Si no encontramos el código, retornamos -1
-    return -1 
 
-def buscar_producto_secuencial(codigos, nombres, precios):
-    # Solicitamos el código del producto a buscar (validado con regex, formato PRD-NNN)
-    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000): ", "PRD", 3)
-    # Realizamos la búsqueda secuencial en la lista de códigos
-    indice = buscar_indice(codigos, codigo)
-
-    # Si no se encuentra (índice = -1), mostramos mensaje de error
-    if indice == -1:
-        print("Producto no encontrado.")
-    # Si se encuentra, mostramos todos los datos del producto
-    else:
-        print("Código:", codigos[indice])
-        print("Nombre:", nombres[indice])
-        print("Precio:", precios[indice])
-
-def buscar_producto_binaria(codigos, nombres, precios):
-    # Solicitamos el código del producto a buscar (validado con regex, formato PRD-NNN)
-    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000): ", "PRD", 3)
-    """
-    READAPTACIÓN: la búsqueda binaria requiere que la lista esté ordenada por código.
-    Para no alterar ese orden ni el de las listas originales, se arma una copia de cada lista y se ordena esa copia por código,
-    reutilizando la misma función genérica de ordenamiento.
-    """
-    codigos_por_codigo = codigos.copy()
-    nombres_por_codigo = nombres.copy()
-    precios_por_codigo = precios.copy()
-    ordenar_listas_paralelas([codigos_por_codigo, nombres_por_codigo, precios_por_codigo], 0)
-
-    indice = busqueda_binaria(codigos_por_codigo, codigo)
-
-    # Si no se encuentra (índice = -1), mostramos mensaje de error
-    if indice == -1:
-        print("Producto no encontrado.")
-    # Si se encuentra, mostramos todos los datos del producto
-    else:
-        print("Código:", codigos_por_codigo[indice])
-        print("Nombre:", nombres_por_codigo[indice])
-        print("Precio:", precios_por_codigo[indice])
-
-
-# FUNCIONES BASE Y LOGIN
-def buscar_usuario(usuarios, nombre_usuario):
-    # Busca un usuario por su nombre usando .get(), que devuelve el diccionario
-    # con sus datos si existe, o None si no existe.
-    return usuarios.get(nombre_usuario)
-
-def iniciar_sesion(usuarios):
- 
-    logged_in = False
-    intentos = 0
- 
-    # El usuario tiene 3 intentos para ingresar las credenciales correctas. Si falla los 3 intentos, se bloquea el acceso.
-    while logged_in == False and intentos < 3:
-        input_user = input("Ingrese su usuario: ")
-        input_password = input("Ingrese su contraseña: ")
- 
-        user_data = buscar_usuario(usuarios, input_user)
-
-        # A partir de acá, la cadena de elif es excluyente: si user_data es None,
-        # ninguno de los elif siguientes se ejecuta. Por eso, para cuando llegamos
-        # al último elif, ya está garantizado que el usuario existe.
-        if user_data == None:
-            print("El usuario no existe. Intente nuevamente.\n")
-            intentos += 1
-        elif user_data["bloqueado"]:
-            print("El usuario está bloqueado. Contacte al administrador.\n")
-            intentos += 1
-        elif user_data["contrasena"] != input_password:
-            print("Contraseña incorrecta. Intente nuevamente.\n")
-            user_data["intentos_fallidos"] += 1
-            intentos += 1
-            if user_data["intentos_fallidos"] >= 3:
-                user_data["bloqueado"] = True
-                print("!!!!!!!! El usuario ha sido bloqueado por 3 intentos fallidos. !!!!!!!! \n")
-        elif user_data["contrasena"] == input_password:
-            # No hace falta validar el usuario de nuevo acá: si llegamos hasta este
-            # punto, ya sabemos que existe (se descartó en el primer if de arriba)
-            print("Inicio de sesión exitoso. Bienvenido al sistema de inventario!")
-            logged_in = True
-
-    if not logged_in:
-        print("<<<<<<<<<< Fallaste 3 intentos. Volvé a intentarlo más tarde. >>>>>>>>>>\n")
-
-    return user_data if logged_in else None
-
-
-def listar_usuarios_bloqueados(usuarios):
-    encontrado = False;
-
-    print("\n --- USUARIOS BLOQUEADOS ---")
-    for nombre_usuario, datos in zip(usuarios.keys(), usuarios.values()):
-        if datos["bloqueado"]:
-            encontrado = True
-            print("Usuario:", nombre_usuario, "| Rol:", datos["rol"], "| Intentos fallidos:", datos["intentos_fallidos"])
-    if not encontrado:
-        print("No hay usuarios bloqueados.")
-
-def desbloquear_usuario(usuarios, nombre_usuario):
-    user_data = buscar_usuario(usuarios, nombre_usuario)
-
-    if user_data is None:
-        print("Error: El usuario no existe.")
-        return
-    elif user_data["bloqueado"]:
-        user_data["bloqueado"] = False
-        user_data["intentos_fallidos"] = 0
-        print(f"Usuario '{nombre_usuario}' desbloqueado exitosamente.")
-
-def administrar_usuarios_bloqueados(usuarios):
-    # Muestra los usuarios bloqueados y permite al admin desbloquear a uno,
-    # o escribir 'volver' para salir sin hacer nada.
-    listar_usuarios_bloqueados(usuarios)
-    nombre_usuario = pedir_texto("\nIngrese el nombre de usuario a desbloquear (o 'volver' para cancelar): ")
-    if nombre_usuario.lower() == "volver":
-        return
-    desbloquear_usuario(usuarios, nombre_usuario)
-
-
+# DATOS INICIALES DEL SISTEMA
 # DATOS HARDCODEADOS DE USUARIOS (diccionario anidado: usuario -> datos del usuario)
 usuarios = {
     "admin": {"contrasena": "inventario2026", "rol": "admin", "intentos_fallidos": 0, "bloqueado": False},
@@ -307,8 +206,85 @@ inventario = {
     "depositos": inv_depositos
 }
 
-# FUNCIONES CRUD 
-# PRODUCTOS
+
+# MÓDULO USUARIOS Y LOGIN
+def buscar_usuario(usuarios, nombre_usuario):
+    # Busca un usuario por su nombre usando .get(), que devuelve el diccionario
+    # con sus datos si existe, o None si no existe.
+    return usuarios.get(nombre_usuario)
+
+def iniciar_sesion(usuarios):
+ 
+    logged_in = False
+    intentos = 0
+ 
+    # El usuario tiene 3 intentos para ingresar las credenciales correctas. Si falla los 3 intentos, se bloquea el acceso.
+    while logged_in == False and intentos < 3:
+        input_user = input("Ingrese su usuario: ")
+        input_password = input("Ingrese su contraseña: ")
+ 
+        user_data = buscar_usuario(usuarios, input_user)
+
+        # A partir de acá, la cadena de elif es excluyente: si user_data es None,
+        # ninguno de los elif siguientes se ejecuta. Por eso, para cuando llegamos
+        # al último elif, ya está garantizado que el usuario existe.
+        if user_data == None:
+            print("El usuario no existe. Intente nuevamente.\n")
+            intentos += 1
+        elif user_data["bloqueado"]:
+            print("El usuario está bloqueado. Contacte al administrador.\n")
+            intentos += 1
+        elif user_data["contrasena"] != input_password:
+            print("Contraseña incorrecta. Intente nuevamente.\n")
+            user_data["intentos_fallidos"] += 1
+            intentos += 1
+            if user_data["intentos_fallidos"] >= 3:
+                user_data["bloqueado"] = True
+                print("!!!!!!!! El usuario ha sido bloqueado por 3 intentos fallidos. !!!!!!!! \n")
+        elif user_data["contrasena"] == input_password:
+            # No hace falta validar el usuario de nuevo acá: si llegamos hasta este
+            # punto, ya sabemos que existe (se descartó en el primer if de arriba)
+            print("Inicio de sesión exitoso. Bienvenido al sistema de inventario!")
+            logged_in = True
+
+    if not logged_in:
+        print("<<<<<<<<<< Fallaste 3 intentos. Volvé a intentarlo más tarde. >>>>>>>>>>\n")
+
+    return user_data if logged_in else None
+
+def listar_usuarios_bloqueados(usuarios):
+    encontrado = False;
+
+    print("\n --- USUARIOS BLOQUEADOS ---")
+    for nombre_usuario, datos in zip(usuarios.keys(), usuarios.values()):
+        if datos["bloqueado"]:
+            encontrado = True
+            print("Usuario:", nombre_usuario, "| Rol:", datos["rol"], "| Intentos fallidos:", datos["intentos_fallidos"])
+    if not encontrado:
+        print("No hay usuarios bloqueados.")
+
+def desbloquear_usuario(usuarios, nombre_usuario):
+    user_data = buscar_usuario(usuarios, nombre_usuario)
+
+    if user_data is None:
+        print("Error: El usuario no existe.")
+        return
+    elif user_data["bloqueado"]:
+        user_data["bloqueado"] = False
+        user_data["intentos_fallidos"] = 0
+        print(f"Usuario '{nombre_usuario}' desbloqueado exitosamente.")
+
+def administrar_usuarios_bloqueados(usuarios):
+    # Muestra los usuarios bloqueados y permite al admin desbloquear a uno,
+    # o escribir 'volver' para salir sin hacer nada.
+    listar_usuarios_bloqueados(usuarios)
+    nombre_usuario = pedir_texto("\nIngrese el nombre de usuario a desbloquear (o 'volver' para cancelar): ")
+    if nombre_usuario.lower() == "volver":
+        return
+    desbloquear_usuario(usuarios, nombre_usuario)
+
+
+# MÓDULO PRODUCTOS
 def alta_producto(codigos, nombres, precios):
     codigo = pedir_codigo("\nIngrese el código del nuevo producto (formato PRD-000): ", "PRD", 3)
     if buscar_indice(codigos, codigo) != -1:
@@ -363,6 +339,7 @@ def listar_productos(codigos, nombres, precios):
     # ahora lo hace generar_reporte_productos(), que usa reduce
     # para combinar todas las líneas en un único string antes de imprimirlas.
     print(generar_reporte_productos(codigos, nombres, precios))
+
 def generar_reporte_productos(codigos, nombres, precios):
     if len(codigos) == 0:
         return "No hay productos cargados."
@@ -377,7 +354,138 @@ def generar_reporte_productos(codigos, nombres, precios):
     reporte = reduce(lambda acumulado, linea: acumulado + "\n" + linea, lineas)
     return "\n--- LISTA DE PRODUCTOS ---\n" + reporte
 
-# CATEGORÍAS
+def buscar_producto_secuencial(codigos, nombres, precios):
+    # Solicitamos el código del producto a buscar (validado con regex, formato PRD-NNN)
+    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000): ", "PRD", 3)
+    # Realizamos la búsqueda secuencial en la lista de códigos
+    indice = buscar_indice(codigos, codigo)
+
+    # Si no se encuentra (índice = -1), mostramos mensaje de error
+    if indice == -1:
+        print("Producto no encontrado.")
+    # Si se encuentra, mostramos todos los datos del producto
+    else:
+        print("Código:", codigos[indice])
+        print("Nombre:", nombres[indice])
+        print("Precio:", precios[indice])
+
+def buscar_producto_binaria(codigos, nombres, precios):
+    # Solicitamos el código del producto a buscar (validado con regex, formato PRD-NNN)
+    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000): ", "PRD", 3)
+    """
+    READAPTACIÓN: la búsqueda binaria requiere que la lista esté ordenada por código.
+    Para no alterar ese orden ni el de las listas originales, se arma una copia de cada lista y se ordena esa copia por código,
+    reutilizando la misma función genérica de ordenamiento.
+    """
+    codigos_por_codigo = codigos.copy()
+    nombres_por_codigo = nombres.copy()
+    precios_por_codigo = precios.copy()
+    ordenar_listas_paralelas([codigos_por_codigo, nombres_por_codigo, precios_por_codigo], 0)
+
+    indice = busqueda_binaria(codigos_por_codigo, codigo)
+
+    # Si no se encuentra (índice = -1), mostramos mensaje de error
+    if indice == -1:
+        print("Producto no encontrado.")
+    # Si se encuentra, mostramos todos los datos del producto
+    else:
+        print("Código:", codigos_por_codigo[indice])
+        print("Nombre:", nombres_por_codigo[indice])
+        print("Precio:", precios_por_codigo[indice])
+
+# PROCESAMIENTO AVANZADO DE CADENAS DE CARACTERES (Lautaro Zanino)
+def buscar_por_palabras(nombres, texto_de_busqueda):
+    # Separa el texto de búsqueda en palabras sueltas, si el texto viene vacío,
+    # la lista queda vacía y como consecuencia ningún producto es descartado
+    texto_de_busqueda_normalizado = texto_de_busqueda.lower().split()
+
+    lista = []
+    for i in range(len(nombres)):
+        nombre = nombres[i].lower()
+        bandera = True
+        # Chequea que TODAS las palabras buscadas estén contenidas en el nombre
+        # sin importar el orden en que las haya escrito el usuario
+        for j in range(len(texto_de_busqueda_normalizado)):
+            if texto_de_busqueda_normalizado[j] not in nombre:
+                bandera = False
+        if bandera == True:
+            lista.append(nombres[i])
+
+    return lista
+
+def buscar_producto_por_palabras(nombres):
+    # Pide el texto de búsqueda, llama a buscar_por_palabras() para buscar coincidencias y muestra
+    # los resultados en pantalla si hubo alguna coincidencia o un mensaje si no se encontró nada
+    texto = pedir_texto("\nIngrese la palabra o palabras a buscar: ")
+    resultados = buscar_por_palabras(nombres, texto)
+
+    if len(resultados) == 0:
+        print("No se encontraron productos que coincidan con la búsqueda")
+    else:
+        print("\n--- RESULTADOS DE LA BÚSQUEDA ---")
+        for i in range(len(resultados)):
+            print("-", resultados[i])
+
+# PROCESAMIENTO AVANZADO DE CADENAS DE CARACTERES (Lautaro Zanino)
+def generar_etiqueta(nombre):
+    palabras_sueltas = nombre.split()
+
+    iniciales = ""
+    for i in range(len(palabras_sueltas)):
+        iniciales += palabras_sueltas[i][0].upper()
+
+    longitud = len(nombre)
+
+    codigo_final = iniciales + "-" + str(longitud)
+
+    return codigo_final
+
+def generar_etiquetas_productos(nombres):
+    lista_etiquetas = []
+    
+    for i in range(len(nombres)):
+        # Llama a la función generar_etiqueta() y guarda el resultado
+        etiqueta = generar_etiqueta(nombres[i])
+        # Junta el resultado en la lista nueva
+        lista_etiquetas.append(etiqueta)
+        
+    return lista_etiquetas
+
+def mostrar_etiquetas_productos(nombres):
+    # Muestra cada producto junto a su etiqueta generada. La encargada de hacer las
+    # etiquetas es generar_etiquetas_productos() que a su vez usa generar_etiqueta()
+    # para procesar cada nombre individualmente
+    if len(nombres) == 0:
+        print("No hay productos cargados.")
+        return
+
+    etiquetas = generar_etiquetas_productos(nombres)
+
+    print("\n--- ETIQUETAS DE PRODUCTOS ---")
+    for i in range(len(nombres)):
+        print(nombres[i], "->", etiquetas[i])
+
+def consulta_productos_en_stock(productos, inventario):
+    prod_codigos = productos["codigos"]  
+    prod_nombres = productos["nombres"]  
+    inv_prods = inventario["codigos_prod"]     
+    inv_cants = inventario["cantidades"]      
+    print("\n--- PRODUCTOS EN STOCK ---")  # Encabezado del reporte
+    for p in range(len(prod_codigos)):  # Recorremos cada producto uno por uno, usando su índice p
+        codigo_actual = prod_codigos[p]  # Guardamos el código del producto actual para no repetir el acceso
+        indices = list(filter(lambda i: inv_prods[i] == codigo_actual, range(len(inv_prods))))
+        # ↑ FILTER: recorremos todos los índices posibles del inventario y nos quedamos
+        # solo con los índices i donde el producto de esa fila coincide con codigo_actual
+        cantidades = list(map(lambda i: inv_cants[i], indices))
+        # ↑ MAP: transformamos la lista de índices filtrados en la lista de cantidades
+        # reales, yendo a buscar inv_cants[i] para cada índice que sobrevivió al filtro
+        total = reduce(lambda acumulado, actual: acumulado + actual, cantidades, 0)
+        # ↑ REDUCE: recorremos la lista de cantidades sumándolas de a una, empezando
+        # el acumulador en 0, hasta quedarnos con un único número final
+        print("Producto:", prod_nombres[p], "- Unidades en stock:", total)  # Mostramos el resultado de este producto
+
+
+# MÓDULO CATEGORÍAS
 def alta_categoria(codigos, nombres, recargos, estados):
     codigo = pedir_codigo("\nIngrese el código de la nueva categoría (formato CAT-00): ", "CAT", 2)
     if buscar_indice(codigos, codigo) != -1:
@@ -431,7 +539,6 @@ def modificar_categoria(codigos, nombres, recargos, estados):
         estados[indice] = nuevo_estado
         print("Categoría actualizada.")
 
-
 def listar_categorias(codigos, nombres, recargos, estados):
     # Muestra el listado de categorías. El que se encarga de armar el texto es la nueva funcion 
     # generar_reporte_categoria(), la cual usa 'reduce' para
@@ -454,7 +561,36 @@ def generar_reporte_categoria(codigos, nombres, recargos, estados):
     # para luego mostrar el contenido a traves del return 
     reporte = reduce(lambda acumulado, linea: acumulado + "\n" + linea, lineas)
     return "\n--- LISTA DE CATEGORIAS ---\n" + reporte
-# INVENTARIO
+
+def consulta_por_categoria(categoria, inventario):
+    cat_codigos = categoria["codigos"]  
+    cat_nombres = categoria["nombres"]   
+    inv_cods = inventario["codigos"]      
+    inv_prods = inventario["codigos_prod"]    
+    inv_cats = inventario["codigos_cat"]      
+    inv_cants = inventario["cantidades"]     
+    inv_deps = inventario["depositos"]      
+
+    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00): ", "CAT", 2)  # Pedimos y validamos el formato del código
+
+    indice_cat = buscar_indice(cat_codigos, cat_buscada)  # Buscamos si la categoría existe realmente en el sistema
+    if indice_cat == -1:  # Si no la encontramos entre las categorías cargadas
+        print("Error: la categoría no existe.")  # Avisamos que el código no corresponde a ninguna categoría real
+        return  # Cortamos la función acá, no tiene sentido seguir buscando stock de algo que no existe
+    nombre_cat = cat_nombres[indice_cat]  # Guardamos el nombre de la categoría para mostrarlo en los mensajes
+
+    indices = list(filter(lambda i: inv_cats[i] == cat_buscada, range(len(inv_cods))))
+    # ↑ FILTER con UNA sola condición: nos quedamos con los índices donde la categoría de esa fila coincide
+
+    if not indices:  # Si la categoría existe, pero no tiene ningún registro de stock asociado
+        print(f"No hay stock registrado para la categoría {cat_buscada} ({nombre_cat}).")  # Avisamos, ahora aclarando el nombre
+    else:  # Si encontramos al menos una fila con esa categoría
+        print(f"\n--- STOCK DE LA CATEGORÍA {cat_buscada} - {nombre_cat} ---")  # Encabezado con código Y nombre de la categoría
+        for i in indices:  # Recorremos los índices filtrados
+            print("Cód Inv:", inv_cods[i], "| Producto:", inv_prods[i], "| Cantidad:", inv_cants[i], "| Depósito:", inv_deps[i])
+
+
+# MÓDULO INVENTARIO
 def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_codigos, cat_codigos):
     codigo = pedir_codigo("\nIngrese el código del nuevo registro de inventario (formato INV-0000): ", "INV", 4)
     if buscar_indice(inv_cods, codigo) != -1:
@@ -535,27 +671,41 @@ def generar_reporte_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_dep
     reporte = reduce(lambda acumulado, linea: acumulado + "\n" + linea, lineas)
     return "\n--- LISTA DE INVENTARIO ---\n" + reporte
 
-# CONSULTAS
-def consulta_productos_en_stock(productos, inventario):
-    prod_codigos = productos["codigos"]  
-    prod_nombres = productos["nombres"]  
-    inv_prods = inventario["codigos_prod"]     
-    inv_cants = inventario["cantidades"]      
-    print("\n--- PRODUCTOS EN STOCK ---")  # Encabezado del reporte
-    for p in range(len(prod_codigos)):  # Recorremos cada producto uno por uno, usando su índice p
-        codigo_actual = prod_codigos[p]  # Guardamos el código del producto actual para no repetir el acceso
-        indices = list(filter(lambda i: inv_prods[i] == codigo_actual, range(len(inv_prods))))
-        # ↑ FILTER: recorremos todos los índices posibles del inventario y nos quedamos
-        # solo con los índices i donde el producto de esa fila coincide con codigo_actual
+def consulta_por_deposito(inv_cods, inv_deps, inv_prods, inv_cants):
+    dep_buscado = solicitar_opcion_menu("\nIngrese el número de depósito a consultar (1, 2 o 3): ", 1, 3)  # Pedimos y validamos el depósito (1, 2 o 3)
+    
+    indices = list(filter(lambda i: inv_deps[i] == dep_buscado, range(len(inv_cods))))
+    # ↑ FILTER con UNA sola condición: nos quedamos con los índices donde el depósito de esa fila coincide
+    
+    if not indices:  # Si no encontramos ninguna fila en ese depósito
+        print("No hay stock registrado en este depósito.")  # Avisamos que no hay resultados
+    else:  # Si encontramos al menos una fila
+        print("\n--- STOCK DEL DEPÓSITO", dep_buscado, "---")  # Encabezado con el depósito buscado
+        for i in indices:  # Recorremos los índices filtrados
+            print("Cód Inv:", inv_cods[i], "| Producto:", inv_prods[i], "| Cantidad:", inv_cants[i])
+            # ↑ No mostramos categoría ni depósito porque no aportan info nueva:
+            # el depósito ya lo eligió el usuario, y la categoría no fue criterio de búsqueda
+
+def consulta_unidades_categoria_deposito(inv_cods, inv_cats, inv_prods, inv_cants, inv_deps):
+    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00): ", "CAT", 2)  # Pedimos y validamos el código de categoría
+    dep_buscado = solicitar_opcion_menu("Ingrese el número de depósito a consultar (1, 2 o 3): ", 1, 3)  # Pedimos y validamos el depósito (solo acepta 1, 2 o 3)
+    indices = list(filter(lambda i: inv_cats[i] == cat_buscada and inv_deps[i] == dep_buscado, range(len(inv_cods))))
+    # ↑ FILTER con DOBLE condición: nos quedamos solo con los índices donde
+    # la categoría Y el depósito de esa fila coinciden con lo buscado (deben cumplirse las dos)
+    if not indices:  # Si la lista de índices quedó vacía (ninguna fila cumplió ambas condiciones)
+        print("No hay stock registrado para esta categoría en ese depósito.")  # Avisamos que no hay resultados
+    else:  # Si encontramos al menos un índice que cumple
+        print("\n--- UNIDADES DE LA CATEGORÍA", cat_buscada, "EN EL DEPÓSITO", dep_buscado, "---")  # Encabezado con los datos buscados
+        for i in indices:  # Recorremos únicamente los índices que pasaron el filtro
+            print("Cód Inv:", inv_cods[i], "| Producto:", inv_prods[i], "| Cantidad:", inv_cants[i])  # Imprimimos el detalle de cada fila encontrada
         cantidades = list(map(lambda i: inv_cants[i], indices))
-        # ↑ MAP: transformamos la lista de índices filtrados en la lista de cantidades
-        # reales, yendo a buscar inv_cants[i] para cada índice que sobrevivió al filtro
+        # ↑ MAP: convertimos los índices filtrados en la lista real de cantidades
         total = reduce(lambda acumulado, actual: acumulado + actual, cantidades, 0)
-        # ↑ REDUCE: recorremos la lista de cantidades sumándolas de a una, empezando
-        # el acumulador en 0, hasta quedarnos con un único número final
-        print("Producto:", prod_nombres[p], "- Unidades en stock:", total)  # Mostramos el resultado de este producto
+        # ↑ REDUCE: sumamos todas las cantidades para obtener el total acumulado, arrancando en 0
+        print("Cantidad total de unidades:", total)  # Mostramos el total calculado
 
 
+# CONSULTAS TRANSVERSALES
 def calcular_valor_stock_por_categoria(inventario, productos, categorias):
     
     total = {} #Se crea un diccionario vacio para luego guardar los datos 
@@ -599,150 +749,6 @@ def mostrar_valor_stock_por_categoria(inventario, productos, categorias):
             cat_nombre = categorias["nombres"][cat_indice] if cat_indice != -1 else "Desconocida"
             
             print(f"Categoría: {cat_codigo} - {cat_nombre} | Valor total de stock: ${valor:.2f}")
-
-def consulta_por_categoria(categoria, inventario):
-    cat_codigos = categoria["codigos"]  
-    cat_nombres = categoria["nombres"]   
-    inv_cods = inventario["codigos"]      
-    inv_prods = inventario["codigos_prod"]    
-    inv_cats = inventario["codigos_cat"]      
-    inv_cants = inventario["cantidades"]     
-    inv_deps = inventario["depositos"]      
-
-    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00): ", "CAT", 2)  # Pedimos y validamos el formato del código
-
-    indice_cat = buscar_indice(cat_codigos, cat_buscada)  # Buscamos si la categoría existe realmente en el sistema
-    if indice_cat == -1:  # Si no la encontramos entre las categorías cargadas
-        print("Error: la categoría no existe.")  # Avisamos que el código no corresponde a ninguna categoría real
-        return  # Cortamos la función acá, no tiene sentido seguir buscando stock de algo que no existe
-    nombre_cat = cat_nombres[indice_cat]  # Guardamos el nombre de la categoría para mostrarlo en los mensajes
-
-    indices = list(filter(lambda i: inv_cats[i] == cat_buscada, range(len(inv_cods))))
-    # ↑ FILTER con UNA sola condición: nos quedamos con los índices donde la categoría de esa fila coincide
-
-    if not indices:  # Si la categoría existe, pero no tiene ningún registro de stock asociado
-        print(f"No hay stock registrado para la categoría {cat_buscada} ({nombre_cat}).")  # Avisamos, ahora aclarando el nombre
-    else:  # Si encontramos al menos una fila con esa categoría
-        print(f"\n--- STOCK DE LA CATEGORÍA {cat_buscada} - {nombre_cat} ---")  # Encabezado con código Y nombre de la categoría
-        for i in indices:  # Recorremos los índices filtrados
-            print("Cód Inv:", inv_cods[i], "| Producto:", inv_prods[i], "| Cantidad:", inv_cants[i], "| Depósito:", inv_deps[i])
-
-def consulta_por_deposito(inv_cods, inv_deps, inv_prods, inv_cants):
-    dep_buscado = solicitar_opcion_menu("\nIngrese el número de depósito a consultar (1, 2 o 3): ", 1, 3)  # Pedimos y validamos el depósito (1, 2 o 3)
-    
-    indices = list(filter(lambda i: inv_deps[i] == dep_buscado, range(len(inv_cods))))
-    # ↑ FILTER con UNA sola condición: nos quedamos con los índices donde el depósito de esa fila coincide
-    
-    if not indices:  # Si no encontramos ninguna fila en ese depósito
-        print("No hay stock registrado en este depósito.")  # Avisamos que no hay resultados
-    else:  # Si encontramos al menos una fila
-        print("\n--- STOCK DEL DEPÓSITO", dep_buscado, "---")  # Encabezado con el depósito buscado
-        for i in indices:  # Recorremos los índices filtrados
-            print("Cód Inv:", inv_cods[i], "| Producto:", inv_prods[i], "| Cantidad:", inv_cants[i])
-            # ↑ No mostramos categoría ni depósito porque no aportan info nueva:
-            # el depósito ya lo eligió el usuario, y la categoría no fue criterio de búsqueda
-
-def consulta_unidades_categoria_deposito(inv_cods, inv_cats, inv_prods, inv_cants, inv_deps):
-    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00): ", "CAT", 2)  # Pedimos y validamos el código de categoría
-    dep_buscado = solicitar_opcion_menu("Ingrese el número de depósito a consultar (1, 2 o 3): ", 1, 3)  # Pedimos y validamos el depósito (solo acepta 1, 2 o 3)
-    indices = list(filter(lambda i: inv_cats[i] == cat_buscada and inv_deps[i] == dep_buscado, range(len(inv_cods))))
-    # ↑ FILTER con DOBLE condición: nos quedamos solo con los índices donde
-    # la categoría Y el depósito de esa fila coinciden con lo buscado (deben cumplirse las dos)
-    if not indices:  # Si la lista de índices quedó vacía (ninguna fila cumplió ambas condiciones)
-        print("No hay stock registrado para esta categoría en ese depósito.")  # Avisamos que no hay resultados
-    else:  # Si encontramos al menos un índice que cumple
-        print("\n--- UNIDADES DE LA CATEGORÍA", cat_buscada, "EN EL DEPÓSITO", dep_buscado, "---")  # Encabezado con los datos buscados
-        for i in indices:  # Recorremos únicamente los índices que pasaron el filtro
-            print("Cód Inv:", inv_cods[i], "| Producto:", inv_prods[i], "| Cantidad:", inv_cants[i])  # Imprimimos el detalle de cada fila encontrada
-        cantidades = list(map(lambda i: inv_cants[i], indices))
-        # ↑ MAP: convertimos los índices filtrados en la lista real de cantidades
-        total = reduce(lambda acumulado, actual: acumulado + actual, cantidades, 0)
-        # ↑ REDUCE: sumamos todas las cantidades para obtener el total acumulado, arrancando en 0
-        print("Cantidad total de unidades:", total)  # Mostramos el total calculado
-        
-# PROCESAMIENTO AVANZADO DE CADENAS DE CARACTERES (Lautaro Zanino)
-def nombre_duplicado(nombres, nombre_nuevo):
-    # Normaliza el nombre nuevo sin espacios y en minúsculas y lo compara contra
-    # cada nombre existente en la lista, normalizado de la misma forma, de esta manera se detectan
-    # duplicados aunque difieran en mayúsculas/minúsculas o espacios
-    nuevo_nombre_normalizado = nombre_nuevo.strip().lower()
-
-    for i in range(len(nombres)):
-        if nombres[i].strip().lower() == nuevo_nombre_normalizado:
-            return True
-    return False
-
-# PROCESAMIENTO AVANZADO DE CADENAS DE CARACTERES (Lautaro Zanino)
-def buscar_por_palabras(nombres, texto_de_busqueda):
-    # Separa el texto de búsqueda en palabras sueltas, si el texto viene vacío,
-    # la lista queda vacía y como consecuencia ningún producto es descartado
-    texto_de_busqueda_normalizado = texto_de_busqueda.lower().split()
-
-    lista = []
-    for i in range(len(nombres)):
-        nombre = nombres[i].lower()
-        bandera = True
-        # Chequea que TODAS las palabras buscadas estén contenidas en el nombre
-        # sin importar el orden en que las haya escrito el usuario
-        for j in range(len(texto_de_busqueda_normalizado)):
-            if texto_de_busqueda_normalizado[j] not in nombre:
-                bandera = False
-        if bandera == True:
-            lista.append(nombres[i])
-
-    return lista
-
-def buscar_producto_por_palabras(nombres):
-    # Pide el texto de búsqueda, llama a buscar_por_palabras() para buscar coincidencias y muestra
-    # los resultados en pantalla si hubo alguna coincidencia o un mensaje si no se encontró nada
-    texto = pedir_texto("\nIngrese la palabra o palabras a buscar: ")
-    resultados = buscar_por_palabras(nombres, texto)
-
-    if len(resultados) == 0:
-        print("No se encontraron productos que coincidan con la búsqueda")
-    else:
-        print("\n--- RESULTADOS DE LA BÚSQUEDA ---")
-        for i in range(len(resultados)):
-            print("-", resultados[i])
-
-# PROCESAMIENTO AVANZADO DE CADENAS DE CARACTERES (Lautaro Zanino)
-def generar_etiqueta(nombre):
-    palabras_sueltas = nombre.split()
-
-    iniciales = ""
-    for i in range(len(palabras_sueltas)):
-        iniciales += palabras_sueltas[i][0].upper()
-
-    longitud = len(nombre)
-
-    codigo_final = iniciales + "-" + str(longitud)
-
-    return codigo_final
-
-def generar_etiquetas_productos(nombres):
-    lista_etiquetas = []
-    
-    for i in range(len(nombres)):
-        # Llama a la función generar_etiqueta() y guarda el resultado
-        etiqueta = generar_etiqueta(nombres[i])
-        # Junta el resultado en la lista nueva
-        lista_etiquetas.append(etiqueta)
-        
-    return lista_etiquetas
-
-def mostrar_etiquetas_productos(nombres):
-    # Muestra cada producto junto a su etiqueta generada. La encargada de hacer las
-    # etiquetas es generar_etiquetas_productos() que a su vez usa generar_etiqueta()
-    # para procesar cada nombre individualmente
-    if len(nombres) == 0:
-        print("No hay productos cargados.")
-        return
-
-    etiquetas = generar_etiquetas_productos(nombres)
-
-    print("\n--- ETIQUETAS DE PRODUCTOS ---")
-    for i in range(len(nombres)):
-        print(nombres[i], "->", etiquetas[i])
 
 
 # PROGRAMA PRINCIPAL (MENÚ)
