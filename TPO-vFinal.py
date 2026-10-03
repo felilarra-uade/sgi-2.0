@@ -28,18 +28,24 @@ def solicitar_opcion_menu(mensaje, min_opcion, max_opcion):
 # Validamos que el input no quede vacío y que no contenga solo números usando las validaciones.
 def pedir_entero(mensaje):
     # Valida que el ingreso sea un número entero y mayor a cero (para códigos y cantidades).
+    # Si el usuario escribe 'volver', se corta el while y se devuelve None para cancelar la operación.
     dato = input(mensaje)
-    while not es_entero(dato) or int(dato) <= 0:
+    while dato.strip().lower() != "volver" and (not es_entero(dato) or int(dato) <= 0):
         print("Error: Debe ingresar un número entero positivo mayor a 0.")
         dato = input(mensaje)
+    if dato.strip().lower() == "volver":
+        return None
     return int(dato)
 
 def pedir_float(mensaje):
     # Valida que el ingreso sea un número decimal y mayor a cero (para precios y recargos).
+    # Si el usuario escribe 'volver', se corta el while y se devuelve None para cancelar la operación.
     dato = input(mensaje)
-    while not es_float(dato) or float(dato) <= 0:
+    while dato.strip().lower() != "volver" and (not es_float(dato) or float(dato) <= 0):
         print("Error: Debe ingresar un número válido mayor a 0.")
         dato = input(mensaje)
+    if dato.strip().lower() == "volver":
+        return None
     return float(dato)
 
 # Validación de nombres con expresión regulares.
@@ -54,10 +60,13 @@ def es_nombre_valido(texto):
 
 def pedir_texto(mensaje):
     # Valida que el texto no esté vacío y no tenga números ni símbolos.
+    # Si el usuario escribe 'volver', se corta el while y se devuelve None para cancelar la operación.
     dato = input(mensaje)
-    while not es_nombre_valido(dato):
+    while dato.strip().lower() != "volver" and not es_nombre_valido(dato):
         print("Error: Debe ingresar un texto válido (solo letras y espacios, entre 3 y 40 caracteres, sin números ni símbolos).")
         dato = input(mensaje)
+    if dato.strip().lower() == "volver":
+        return None
     return dato.strip()
 
 # Validación de códigos con expresión regulares.
@@ -72,11 +81,14 @@ def es_codigo_valido(dato, prefijo, cant_digitos):
 
 def pedir_codigo(mensaje, prefijo, cant_digitos):
 # .strip() usado para descartar espacios de más.
+    # Si el usuario escribe 'volver', se corta el while y se devuelve None para cancelar la operación.
     dato = input(mensaje).strip()
-    while not es_codigo_valido(dato, prefijo, cant_digitos):
+    while dato.lower() != "volver" and not es_codigo_valido(dato, prefijo, cant_digitos):
         ejemplo = prefijo + "-" + ("0" * (cant_digitos - 1)) + "1"
         print(f"Error: El código debe tener el formato {prefijo}-{'N' * cant_digitos} (ej: {ejemplo}).")
         dato = input(mensaje).strip()
+    if dato.lower() == "volver":
+        return None
     return dato
 
 # PROCESAMIENTO AVANZADO DE CADENAS DE CARACTERES (Lautaro Zanino)
@@ -88,6 +100,13 @@ def nombre_duplicado(nombres, nombre_nuevo):
 
     for i in range(len(nombres)):
         if nombres[i].strip().lower() == nuevo_nombre_normalizado:
+            return True
+    return False
+
+def nombre_duplicado_excluyendo(nombres, nombre_nuevo, indice_actual):
+    nuevo_nombre_normalizado = nombre_nuevo.strip().lower()
+    for i in range(len(nombres)):
+        if i != indice_actual and nombres[i].strip().lower() == nuevo_nombre_normalizado:
             return True
     return False
 
@@ -279,33 +298,46 @@ def administrar_usuarios_bloqueados(usuarios):
     # o escribir 'volver' para salir sin hacer nada.
     listar_usuarios_bloqueados(usuarios)
     nombre_usuario = pedir_texto("\nIngrese el nombre de usuario a desbloquear (o 'volver' para cancelar): ")
-    if nombre_usuario.lower() == "volver":
+    # pedir_texto ya devuelve None cuando el usuario escribe 'volver'
+    if nombre_usuario is None:
         return
     desbloquear_usuario(usuarios, nombre_usuario)
 
 
 # MÓDULO PRODUCTOS
 def alta_producto(codigos, nombres, precios):
-    codigo = pedir_codigo("\nIngrese el código del nuevo producto (formato PRD-000): ", "PRD", 3)
+    codigo = pedir_codigo("\nIngrese el código del nuevo producto (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+    if codigo is None:
+        print("Operación cancelada.")
+        return
     if buscar_indice(codigos, codigo) != -1:
         print("Error: Ya existe un producto con ese código.")
     else:
-        nombre = pedir_texto("Ingrese el nombre del producto: ")
+        nombre = pedir_texto("Ingrese el nombre del producto (o 'volver' para cancelar): ")
+        if nombre is None:
+            print("Operación cancelada.")
+            return
         # Validación agregada por Lautaro Zanino: evita cargar un producto con un nombre ya existente
         # (aunque difiera en mayúsculas/minúsculas o espacios) usando nombre_duplicado().
         if nombre_duplicado(nombres, nombre):
             print("Error: Ya existe un producto con un nombre igual o muy similar.")
             return
         
-        precio = pedir_float("Ingrese el precio: $")
+        precio = pedir_float("Ingrese el precio (o 'volver' para cancelar): $")
+        if precio is None:
+            print("Operación cancelada.")
+            return
         codigos.append(codigo)
         nombres.append(nombre)
         precios.append(precio)
         print("¡Producto agregado con éxito!")
 
 def baja_producto(codigos, nombres, precios, inv_prods):
-    codigo = pedir_codigo("\nIngrese el código del producto a eliminar (formato PRD-000): ", "PRD", 3)
-    
+    codigo = pedir_codigo("\nIngrese el código del producto a eliminar (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+    if codigo is None:
+        print("Operación cancelada.")
+        return
+
     # Verificación de integridad de datos
     # Si el producto existe en el inventario, no se puede eliminar hasta que no esté eliminado el registro de inventario que contiene ese producto
     if buscar_indice(inv_prods, codigo) != -1:
@@ -322,14 +354,26 @@ def baja_producto(codigos, nombres, precios, inv_prods):
         print("Producto '" + nombre_borrado + "' eliminado correctamente.")
 
 def modificar_producto(codigos, nombres, precios):
-    codigo = pedir_codigo("\nIngrese el código del producto a modificar (formato PRD-000): ", "PRD", 3)
+    codigo = pedir_codigo("\nIngrese el código del producto a modificar (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+    if codigo is None:
+        print("Operación cancelada.")
+        return
     indice = buscar_indice(codigos, codigo)
     if indice == -1:
         print("Error: El producto no existe.")
     else:
         print("Producto actual: ", nombres[indice], "- Precio: $", precios[indice])
-        nuevo_nombre = pedir_texto("Ingrese el nuevo nombre: ")
-        nuevo_precio = pedir_float("Ingrese el nuevo precio: $")
+        nuevo_nombre = pedir_texto("Ingrese el nuevo nombre (o 'volver' para cancelar): ")
+        if nuevo_nombre is None:
+            print("Operación cancelada.")
+            return
+        if nombre_duplicado_excluyendo(nombres, nuevo_nombre, indice):
+            print("Error: Ya existe otro producto con un nombre igual o muy similar.")
+            return
+        nuevo_precio = pedir_float("Ingrese el nuevo precio (o 'volver' para cancelar): $")
+        if nuevo_precio is None:
+            print("Operación cancelada.")
+            return
         nombres[indice] = nuevo_nombre
         precios[indice] = nuevo_precio
         print("Producto actualizado.")
@@ -356,7 +400,10 @@ def generar_reporte_productos(codigos, nombres, precios):
 
 def buscar_producto_secuencial(codigos, nombres, precios):
     # Solicitamos el código del producto a buscar (validado con regex, formato PRD-NNN)
-    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000): ", "PRD", 3)
+    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+    if codigo is None:
+        print("Operación cancelada.")
+        return
     # Realizamos la búsqueda secuencial en la lista de códigos
     indice = buscar_indice(codigos, codigo)
 
@@ -371,7 +418,10 @@ def buscar_producto_secuencial(codigos, nombres, precios):
 
 def buscar_producto_binaria(codigos, nombres, precios):
     # Solicitamos el código del producto a buscar (validado con regex, formato PRD-NNN)
-    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000): ", "PRD", 3)
+    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+    if codigo is None:
+        print("Operación cancelada.")
+        return
     """
     READAPTACIÓN: la búsqueda binaria requiere que la lista esté ordenada por código.
     Para no alterar ese orden ni el de las listas originales, se arma una copia de cada lista y se ordena esa copia por código,
@@ -416,7 +466,10 @@ def buscar_por_palabras(nombres, texto_de_busqueda):
 def buscar_producto_por_palabras(nombres):
     # Pide el texto de búsqueda, llama a buscar_por_palabras() para buscar coincidencias y muestra
     # los resultados en pantalla si hubo alguna coincidencia o un mensaje si no se encontró nada
-    texto = pedir_texto("\nIngrese la palabra o palabras a buscar: ")
+    texto = pedir_texto("\nIngrese la palabra o palabras a buscar (o 'volver' para cancelar): ")
+    if texto is None:
+        print("Operación cancelada.")
+        return
     resultados = buscar_por_palabras(nombres, texto)
 
     if len(resultados) == 0:
@@ -487,18 +540,27 @@ def consulta_productos_en_stock(productos, inventario):
 
 # MÓDULO CATEGORÍAS
 def alta_categoria(codigos, nombres, recargos, estados):
-    codigo = pedir_codigo("\nIngrese el código de la nueva categoría (formato CAT-00): ", "CAT", 2)
+    codigo = pedir_codigo("\nIngrese el código de la nueva categoría (formato CAT-00) (o 'volver' para cancelar): ", "CAT", 2)
+    if codigo is None:
+        print("Operación cancelada.")
+        return
     if buscar_indice(codigos, codigo) != -1:
         print("Error: Ya existe una categoría con ese código.")
     else:
-        nombre = pedir_texto("Ingrese el nombre de la categoría: ")
+        nombre = pedir_texto("Ingrese el nombre de la categoría (o 'volver' para cancelar): ")
+        if nombre is None:
+            print("Operación cancelada.")
+            return
         # Validación agregada por Lautaro Zanino: evita cargar una categoría con un nombre ya existente
         # usando la misma función nombre_duplicado()
         if nombre_duplicado(nombres, nombre):
             print("Error: Ya existe una categoría con un nombre igual o muy similar.")
             return
 
-        recargo = pedir_float("Ingrese el porcentaje de recargo (ej: 15.5): ")
+        recargo = pedir_float("Ingrese el porcentaje de recargo (ej: 15.5) (o 'volver' para cancelar): ")
+        if recargo is None:
+            print("Operación cancelada.")
+            return
         estado = solicitar_opcion_menu("Ingrese el estado (1 = activa / 0 = inactiva): ", 0, 1)
         codigos.append(codigo)
         nombres.append(nombre)
@@ -507,8 +569,11 @@ def alta_categoria(codigos, nombres, recargos, estados):
         print("¡Categoría agregada con éxito!")
 
 def baja_categoria(codigos, nombres, recargos, estados, inv_cats):
-    codigo = pedir_codigo("\nIngrese el código de la categoría a eliminar (formato CAT-00): ", "CAT", 2)
-    
+    codigo = pedir_codigo("\nIngrese el código de la categoría a eliminar (formato CAT-00) (o 'volver' para cancelar): ", "CAT", 2)
+    if codigo is None:
+        print("Operación cancelada.")
+        return
+
     # Verificación de integridad de datos - Si la categoría existe en el inventario, no se puede eliminar hasta que no esté eliminado el registro de inventario que contiene esa categoría
     if buscar_indice(inv_cats, codigo) != -1:
         print("Error: No se puede eliminar. Hay productos en el inventario vinculados a esta categoría.")
@@ -525,14 +590,26 @@ def baja_categoria(codigos, nombres, recargos, estados, inv_cats):
         print("Categoría '" + nombre_borrado + "' eliminada correctamente.")
 
 def modificar_categoria(codigos, nombres, recargos, estados):
-    codigo = pedir_codigo("\nIngrese el código de la categoría a modificar (formato CAT-00): ", "CAT", 2)
+    codigo = pedir_codigo("\nIngrese el código de la categoría a modificar (formato CAT-00) (o 'volver' para cancelar): ", "CAT", 2)
+    if codigo is None:
+        print("Operación cancelada.")
+        return
     indice = buscar_indice(codigos, codigo)
     if indice == -1:
         print("Error: La categoría no existe.")
     else:
         print("Categoría actual:", nombres[indice], "| Recargo:", recargos[indice], "% | Estado:", estados[indice])
-        nuevo_nombre = pedir_texto("Ingrese el nuevo nombre: ")
-        nuevo_recargo = pedir_float("Ingrese el nuevo recargo: ")
+        nuevo_nombre = pedir_texto("Ingrese el nuevo nombre (o 'volver' para cancelar): ")
+        if nuevo_nombre is None:
+            print("Operación cancelada.")
+            return
+        if nombre_duplicado_excluyendo(nombres, nuevo_nombre, indice):
+            print("Error: Ya existe otra categoría con un nombre igual o muy similar.")
+            return
+        nuevo_recargo = pedir_float("Ingrese el nuevo recargo (o 'volver' para cancelar): ")
+        if nuevo_recargo is None:
+            print("Operación cancelada.")
+            return
         nuevo_estado = solicitar_opcion_menu("Ingrese el nuevo estado (1 = activa / 0 = inactiva): ", 0, 1)
         nombres[indice] = nuevo_nombre
         recargos[indice] = nuevo_recargo
@@ -591,20 +668,36 @@ def consulta_por_categoria(categoria, inventario):
 
 
 # MÓDULO INVENTARIO
-def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_codigos, cat_codigos):
-    codigo = pedir_codigo("\nIngrese el código del nuevo registro de inventario (formato INV-0000): ", "INV", 4)
+def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_codigos, cat_codigos, cat_estados):
+    codigo = pedir_codigo("\nIngrese el código del nuevo registro de inventario (formato INV-0000) (o 'volver' para cancelar): ", "INV", 4)
+    if codigo is None:
+        print("Operación cancelada.")
+        return
     if buscar_indice(inv_cods, codigo) != -1:
         print("Error: Ya existe un registro de inventario con ese código.")
     else:
-        cod_prod = pedir_codigo("Ingrese el código del producto (formato PRD-000): ", "PRD", 3)
+        cod_prod = pedir_codigo("Ingrese el código del producto (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+        if cod_prod is None:
+            print("Operación cancelada.")
+            return
         if buscar_indice(prod_codigos, cod_prod) == -1:
             print("Error: El producto no existe en el sistema. Alta cancelada.")
             return
-        cod_cat = pedir_codigo("Ingrese el código de la categoría (formato CAT-00): ", "CAT", 2)
-        if buscar_indice(cat_codigos, cod_cat) == -1:
+        cod_cat = pedir_codigo("Ingrese el código de la categoría (formato CAT-00) (o 'volver' para cancelar): ", "CAT", 2)
+        if cod_cat is None:
+            print("Operación cancelada.")
+            return
+        indice_cat = buscar_indice(cat_codigos, cod_cat)
+        if indice_cat == -1:
             print("Error: La categoría no existe en el sistema. Alta cancelada.")
             return
-        cantidad = pedir_entero("Ingrese la cantidad de unidades: ")
+        if cat_estados[indice_cat] == 0:
+            print("Error: La categoría está inactiva. No se puede cargar stock. Alta cancelada.")
+            return
+        cantidad = pedir_entero("Ingrese la cantidad de unidades (o 'volver' para cancelar): ")
+        if cantidad is None:
+            print("Operación cancelada.")
+            return
         deposito = solicitar_opcion_menu("Ingrese el número de depósito (1, 2 o 3): ", 1, 3)
         
         inv_cods.append(codigo)
@@ -615,7 +708,10 @@ def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_cod
         print("¡Registro de inventario agregado con éxito!")
 
 def baja_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps):
-    codigo = pedir_codigo("\nIngrese el código de inventario a eliminar (formato INV-0000): ", "INV", 4)
+    codigo = pedir_codigo("\nIngrese el código de inventario a eliminar (formato INV-0000) (o 'volver' para cancelar): ", "INV", 4)
+    if codigo is None:
+        print("Operación cancelada.")
+        return
     indice = buscar_indice(inv_cods, codigo)
     if indice == -1:
         print("Error: El registro no existe.")
@@ -627,22 +723,38 @@ def baja_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps):
         inv_deps.pop(indice)
         print("Registro de inventario eliminado correctamente.")
 
-def modificar_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_codigos, cat_codigos):
-    codigo = pedir_codigo("\nIngrese el código de inventario a modificar (formato INV-0000): ", "INV", 4)
+def modificar_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_codigos, cat_codigos, cat_estados):
+    codigo = pedir_codigo("\nIngrese el código de inventario a modificar (formato INV-0000) (o 'volver' para cancelar): ", "INV", 4)
+    if codigo is None:
+        print("Operación cancelada.")
+        return
     indice = buscar_indice(inv_cods, codigo)
     if indice == -1:
         print("Error: El registro no existe.")
     else:
         print("Registro actual -> Prod:", inv_prods[indice], "| Cat:", inv_cats[indice], "| Cant:", inv_cants[indice], "| Depósito:", inv_deps[indice])
-        nuevo_cod_prod = pedir_codigo("Ingrese el nuevo código de producto (formato PRD-000): ", "PRD", 3)
+        nuevo_cod_prod = pedir_codigo("Ingrese el nuevo código de producto (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+        if nuevo_cod_prod is None:
+            print("Operación cancelada.")
+            return
         if buscar_indice(prod_codigos, nuevo_cod_prod) == -1:
             print("Error: El producto no existe. Modificación cancelada.")
             return
-        nuevo_cod_cat = pedir_codigo("Ingrese el nuevo código de categoría (formato CAT-00): ", "CAT", 2)
-        if buscar_indice(cat_codigos, nuevo_cod_cat) == -1:
+        nuevo_cod_cat = pedir_codigo("Ingrese el nuevo código de categoría (formato CAT-00) (o 'volver' para cancelar): ", "CAT", 2)
+        if nuevo_cod_cat is None:
+            print("Operación cancelada.")
+            return
+        indice_cat = buscar_indice(cat_codigos, nuevo_cod_cat)
+        if indice_cat == -1:
             print("Error: La categoría no existe. Modificación cancelada.")
             return
-        nueva_cant = pedir_entero("Ingrese la nueva cantidad: ")
+        if cat_estados[indice_cat] == 0:
+            print("Error: La categoría está inactiva. No se puede asignar stock a esta categoría. Modificación cancelada.")
+            return
+        nueva_cant = pedir_entero("Ingrese la nueva cantidad (o 'volver' para cancelar): ")
+        if nueva_cant is None:
+            print("Operación cancelada.")
+            return
         nuevo_dep = solicitar_opcion_menu("Ingrese el nuevo depósito (1, 2 o 3): ", 1, 3)
         
         inv_prods[indice] = nuevo_cod_prod
@@ -776,7 +888,7 @@ if logged_in:
 
         if opcion_menu == 0:
             print("Quiere salir de la app?")
-            salir = int(input("1 para salir 2 para quedarse: "))
+            salir = solicitar_opcion_menu("1 para salir 2 para quedarse: ", 1, 2)
             if salir == 1:
                 opcion_menu = 999
             # si elige quedarse (2), el while vuelve a imprimir el menú principal completo desde el inicio     
@@ -850,11 +962,11 @@ if logged_in:
                 opcion_submenu_inventario = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
 
                 if opcion_submenu_inventario == 1:
-                    alta_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos)
+                    alta_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
                 elif opcion_submenu_inventario == 2:
                     baja_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
                 elif opcion_submenu_inventario == 3:
-                    modificar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos)
+                    modificar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
                 elif opcion_submenu_inventario == 4:
                     ordenar_listas_paralelas([inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos], 3)
                     listar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
