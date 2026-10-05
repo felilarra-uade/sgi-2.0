@@ -79,7 +79,17 @@ def es_codigo_valido(dato, prefijo, cant_digitos):
     patron = r"^" + prefijo + r"-\d{" + str(cant_digitos) + r"}$"
     return re.match(patron, dato) is not None
 
-def pedir_codigo(mensaje, prefijo, cant_digitos):
+# TUPLAS DE FORMATO DE CÓDIGO (Felipe Larrañaga - Segunda Parte)
+# Cada formato es una tupla (prefijo, cantidad de dígitos). Se usa tupla porque son datos fijos del
+# sistema que van siempre juntos y no deben modificarse durante la ejecución. Antes estos valores
+# estaban repetidos "a mano" en cada llamada a pedir_codigo (ej: "PRD", 3); ahora se definen una sola vez.
+FORMATO_PRODUCTO = ("PRD", 3)
+FORMATO_CATEGORIA = ("CAT", 2)
+FORMATO_INVENTARIO = ("INV", 4)
+
+def pedir_codigo(mensaje, formato):
+    # Desempaquetado de la tupla: el primer elemento es el prefijo y el segundo la cantidad de dígitos.
+    prefijo, cant_digitos = formato
 # .strip() usado para descartar espacios de más.
     # Si el usuario escribe 'volver', se corta el while y se devuelve None para cancelar la operación.
     dato = input(mensaje).strip()
@@ -306,7 +316,7 @@ def administrar_usuarios_bloqueados(usuarios):
 
 # MÓDULO PRODUCTOS
 def alta_producto(codigos, nombres, precios):
-    codigo = pedir_codigo("\nIngrese el código del nuevo producto (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+    codigo = pedir_codigo("\nIngrese el código del nuevo producto (formato PRD-000) (o 'volver' para cancelar): ", FORMATO_PRODUCTO)
     if codigo is None:
         print("Operación cancelada.")
         return
@@ -333,7 +343,7 @@ def alta_producto(codigos, nombres, precios):
         print("¡Producto agregado con éxito!")
 
 def baja_producto(codigos, nombres, precios, inv_prods):
-    codigo = pedir_codigo("\nIngrese el código del producto a eliminar (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+    codigo = pedir_codigo("\nIngrese el código del producto a eliminar (formato PRD-000) (o 'volver' para cancelar): ", FORMATO_PRODUCTO)
     if codigo is None:
         print("Operación cancelada.")
         return
@@ -354,7 +364,7 @@ def baja_producto(codigos, nombres, precios, inv_prods):
         print("Producto '" + nombre_borrado + "' eliminado correctamente.")
 
 def modificar_producto(codigos, nombres, precios):
-    codigo = pedir_codigo("\nIngrese el código del producto a modificar (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+    codigo = pedir_codigo("\nIngrese el código del producto a modificar (formato PRD-000) (o 'volver' para cancelar): ", FORMATO_PRODUCTO)
     if codigo is None:
         print("Operación cancelada.")
         return
@@ -398,9 +408,24 @@ def generar_reporte_productos(codigos, nombres, precios):
     reporte = reduce(lambda acumulado, linea: acumulado + "\n" + linea, lineas)
     return "\n--- LISTA DE PRODUCTOS ---\n" + reporte
 
+# TUPLA COMO REGISTRO DE PRODUCTO (Felipe Larrañaga - Segunda Parte)
+def armar_registro_producto(codigos, nombres, precios, indice):
+    # Agrupa en una tupla (codigo, nombre, precio) los datos del producto ubicado en 'indice'.
+    # Se usa tupla porque el resultado de una búsqueda es solo para consultar: el registro
+    # encontrado no debe modificarse, y además agrupa datos de distinto tipo (texto y número).
+    return (codigos[indice], nombres[indice], precios[indice])
+
+def mostrar_registro_producto(registro):
+    # Desempaquetamos la tupla en tres variables para mostrar cada dato.
+    # Reemplaza los tres print() que antes estaban repetidos en ambas búsquedas.
+    codigo, nombre, precio = registro
+    print("Código:", codigo)
+    print("Nombre:", nombre)
+    print("Precio:", precio)
+
 def buscar_producto_secuencial(codigos, nombres, precios):
     # Solicitamos el código del producto a buscar (validado con regex, formato PRD-NNN)
-    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000) (o 'volver' para cancelar): ", FORMATO_PRODUCTO)
     if codigo is None:
         print("Operación cancelada.")
         return
@@ -410,15 +435,14 @@ def buscar_producto_secuencial(codigos, nombres, precios):
     # Si no se encuentra (índice = -1), mostramos mensaje de error
     if indice == -1:
         print("Producto no encontrado.")
-    # Si se encuentra, mostramos todos los datos del producto
+    # Si se encuentra, armamos la tupla del registro y la mostramos
     else:
-        print("Código:", codigos[indice])
-        print("Nombre:", nombres[indice])
-        print("Precio:", precios[indice])
+        registro = armar_registro_producto(codigos, nombres, precios, indice)
+        mostrar_registro_producto(registro)
 
 def buscar_producto_binaria(codigos, nombres, precios):
     # Solicitamos el código del producto a buscar (validado con regex, formato PRD-NNN)
-    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+    codigo = pedir_codigo("\nIngrese el código del producto (formato PRD-000) (o 'volver' para cancelar): ", FORMATO_PRODUCTO)
     if codigo is None:
         print("Operación cancelada.")
         return
@@ -437,11 +461,10 @@ def buscar_producto_binaria(codigos, nombres, precios):
     # Si no se encuentra (índice = -1), mostramos mensaje de error
     if indice == -1:
         print("Producto no encontrado.")
-    # Si se encuentra, mostramos todos los datos del producto
+    # Si se encuentra, armamos la tupla del registro (desde las copias ordenadas) y la mostramos
     else:
-        print("Código:", codigos_por_codigo[indice])
-        print("Nombre:", nombres_por_codigo[indice])
-        print("Precio:", precios_por_codigo[indice])
+        registro = armar_registro_producto(codigos_por_codigo, nombres_por_codigo, precios_por_codigo, indice)
+        mostrar_registro_producto(registro)
 
 # PROCESAMIENTO AVANZADO DE CADENAS DE CARACTERES (Lautaro Zanino)
 def buscar_por_palabras(nombres, texto_de_busqueda):
@@ -540,7 +563,7 @@ def consulta_productos_en_stock(productos, inventario):
 
 # MÓDULO CATEGORÍAS
 def alta_categoria(codigos, nombres, recargos, estados):
-    codigo = pedir_codigo("\nIngrese el código de la nueva categoría (formato CAT-00) (o 'volver' para cancelar): ", "CAT", 2)
+    codigo = pedir_codigo("\nIngrese el código de la nueva categoría (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)
     if codigo is None:
         print("Operación cancelada.")
         return
@@ -569,7 +592,7 @@ def alta_categoria(codigos, nombres, recargos, estados):
         print("¡Categoría agregada con éxito!")
 
 def baja_categoria(codigos, nombres, recargos, estados, inv_cats):
-    codigo = pedir_codigo("\nIngrese el código de la categoría a eliminar (formato CAT-00) (o 'volver' para cancelar): ", "CAT", 2)
+    codigo = pedir_codigo("\nIngrese el código de la categoría a eliminar (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)
     if codigo is None:
         print("Operación cancelada.")
         return
@@ -590,7 +613,7 @@ def baja_categoria(codigos, nombres, recargos, estados, inv_cats):
         print("Categoría '" + nombre_borrado + "' eliminada correctamente.")
 
 def modificar_categoria(codigos, nombres, recargos, estados):
-    codigo = pedir_codigo("\nIngrese el código de la categoría a modificar (formato CAT-00) (o 'volver' para cancelar): ", "CAT", 2)
+    codigo = pedir_codigo("\nIngrese el código de la categoría a modificar (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)
     if codigo is None:
         print("Operación cancelada.")
         return
@@ -648,7 +671,7 @@ def consulta_por_categoria(categoria, inventario):
     inv_cants = inventario["cantidades"]     
     inv_deps = inventario["depositos"]      
 
-    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00): ", "CAT", 2)  # Pedimos y validamos el formato del código
+    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00): ", FORMATO_CATEGORIA)  # Pedimos y validamos el formato del código
 
     indice_cat = buscar_indice(cat_codigos, cat_buscada)  # Buscamos si la categoría existe realmente en el sistema
     if indice_cat == -1:  # Si no la encontramos entre las categorías cargadas
@@ -669,21 +692,21 @@ def consulta_por_categoria(categoria, inventario):
 
 # MÓDULO INVENTARIO
 def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_codigos, cat_codigos, cat_estados):
-    codigo = pedir_codigo("\nIngrese el código del nuevo registro de inventario (formato INV-0000) (o 'volver' para cancelar): ", "INV", 4)
+    codigo = pedir_codigo("\nIngrese el código del nuevo registro de inventario (formato INV-0000) (o 'volver' para cancelar): ", FORMATO_INVENTARIO)
     if codigo is None:
         print("Operación cancelada.")
         return
     if buscar_indice(inv_cods, codigo) != -1:
         print("Error: Ya existe un registro de inventario con ese código.")
     else:
-        cod_prod = pedir_codigo("Ingrese el código del producto (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+        cod_prod = pedir_codigo("Ingrese el código del producto (formato PRD-000) (o 'volver' para cancelar): ", FORMATO_PRODUCTO)
         if cod_prod is None:
             print("Operación cancelada.")
             return
         if buscar_indice(prod_codigos, cod_prod) == -1:
             print("Error: El producto no existe en el sistema. Alta cancelada.")
             return
-        cod_cat = pedir_codigo("Ingrese el código de la categoría (formato CAT-00) (o 'volver' para cancelar): ", "CAT", 2)
+        cod_cat = pedir_codigo("Ingrese el código de la categoría (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)
         if cod_cat is None:
             print("Operación cancelada.")
             return
@@ -708,7 +731,7 @@ def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_cod
         print("¡Registro de inventario agregado con éxito!")
 
 def baja_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps):
-    codigo = pedir_codigo("\nIngrese el código de inventario a eliminar (formato INV-0000) (o 'volver' para cancelar): ", "INV", 4)
+    codigo = pedir_codigo("\nIngrese el código de inventario a eliminar (formato INV-0000) (o 'volver' para cancelar): ", FORMATO_INVENTARIO)
     if codigo is None:
         print("Operación cancelada.")
         return
@@ -724,7 +747,7 @@ def baja_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps):
         print("Registro de inventario eliminado correctamente.")
 
 def modificar_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_codigos, cat_codigos, cat_estados):
-    codigo = pedir_codigo("\nIngrese el código de inventario a modificar (formato INV-0000) (o 'volver' para cancelar): ", "INV", 4)
+    codigo = pedir_codigo("\nIngrese el código de inventario a modificar (formato INV-0000) (o 'volver' para cancelar): ", FORMATO_INVENTARIO)
     if codigo is None:
         print("Operación cancelada.")
         return
@@ -733,14 +756,14 @@ def modificar_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, pro
         print("Error: El registro no existe.")
     else:
         print("Registro actual -> Prod:", inv_prods[indice], "| Cat:", inv_cats[indice], "| Cant:", inv_cants[indice], "| Depósito:", inv_deps[indice])
-        nuevo_cod_prod = pedir_codigo("Ingrese el nuevo código de producto (formato PRD-000) (o 'volver' para cancelar): ", "PRD", 3)
+        nuevo_cod_prod = pedir_codigo("Ingrese el nuevo código de producto (formato PRD-000) (o 'volver' para cancelar): ", FORMATO_PRODUCTO)
         if nuevo_cod_prod is None:
             print("Operación cancelada.")
             return
         if buscar_indice(prod_codigos, nuevo_cod_prod) == -1:
             print("Error: El producto no existe. Modificación cancelada.")
             return
-        nuevo_cod_cat = pedir_codigo("Ingrese el nuevo código de categoría (formato CAT-00) (o 'volver' para cancelar): ", "CAT", 2)
+        nuevo_cod_cat = pedir_codigo("Ingrese el nuevo código de categoría (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)
         if nuevo_cod_cat is None:
             print("Operación cancelada.")
             return
@@ -799,7 +822,7 @@ def consulta_por_deposito(inv_cods, inv_deps, inv_prods, inv_cants):
             # el depósito ya lo eligió el usuario, y la categoría no fue criterio de búsqueda
 
 def consulta_unidades_categoria_deposito(inv_cods, inv_cats, inv_prods, inv_cants, inv_deps):
-    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00): ", "CAT", 2)  # Pedimos y validamos el código de categoría
+    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00): ", FORMATO_CATEGORIA)  # Pedimos y validamos el código de categoría
     dep_buscado = solicitar_opcion_menu("Ingrese el número de depósito a consultar (1, 2 o 3): ", 1, 3)  # Pedimos y validamos el depósito (solo acepta 1, 2 o 3)
     indices = list(filter(lambda i: inv_cats[i] == cat_buscada and inv_deps[i] == dep_buscado, range(len(inv_cods))))
     # ↑ FILTER con DOBLE condición: nos quedamos solo con los índices donde
@@ -861,6 +884,74 @@ def mostrar_valor_stock_por_categoria(inventario, productos, categorias):
             cat_nombre = categorias["nombres"][cat_indice] if cat_indice != -1 else "Desconocida"
             
             print(f"Categoría: {cat_codigo} - {cat_nombre} | Valor total de stock: ${valor:.2f}")
+
+
+# CONSULTAS CON CONJUNTOS (Felipe Larrañaga - Segunda Parte)
+def obtener_productos_sin_stock(prod_codigos, inv_codigos_prod):
+    # set(prod_codigos): todos los productos cargados en el sistema.
+    # set(inv_codigos_prod): productos que tienen al menos un registro de inventario (sin repetidos,
+    # aunque un producto aparezca en varias filas del inventario).
+    # DIFERENCIA (.difference()): productos que están cargados en el sistema pero no aparecen en el inventario.
+    return set(prod_codigos).difference(set(inv_codigos_prod))
+
+def obtener_productos_de_deposito(inv_codigos_prod, inv_depositos, deposito):
+    # Devuelve un conjunto con los códigos de producto que tienen stock en el depósito indicado.
+    # Se usa set para quedarnos con valores únicos: un mismo producto puede tener más de un
+    # registro de inventario en el mismo depósito y solo nos interesa saber si está o no.
+    productos_deposito = set()
+    for i in range(len(inv_codigos_prod)):
+        if inv_depositos[i] == deposito:
+            productos_deposito.add(inv_codigos_prod[i])
+    return productos_deposito
+
+def comparar_depositos(inv_codigos_prod, inv_depositos, deposito_a, deposito_b):
+    productos_a = obtener_productos_de_deposito(inv_codigos_prod, inv_depositos, deposito_a)
+    productos_b = obtener_productos_de_deposito(inv_codigos_prod, inv_depositos, deposito_b)
+
+    en_ambos = productos_a.intersection(productos_b)   # INTERSECCIÓN: productos con stock en los dos depósitos
+    solo_en_a = productos_a.difference(productos_b)    # DIFERENCIA: productos que solo están en el depósito A
+    solo_en_b = productos_b.difference(productos_a)    # DIFERENCIA: productos que solo están en el depósito B
+
+    # Devolvemos los tres resultados agrupados en una tupla: se calculan una vez y solo se muestran,
+    # no se modifican. Quien llama a la función los desempaqueta en tres variables.
+    return (en_ambos, solo_en_a, solo_en_b)
+
+def mostrar_conjunto_productos(titulo, conjunto_codigos, productos):
+    # Muestra los productos de un conjunto con su nombre. Como el set no tiene orden,
+    # lo pasamos a una lista y la ordenamos con .sort() para mostrarlos ordenados por código.
+    print(titulo)
+    if len(conjunto_codigos) == 0:
+        print("  (ninguno)")
+    else:
+        codigos_ordenados = list(conjunto_codigos)
+        codigos_ordenados.sort()
+        for codigo in codigos_ordenados:
+            indice = buscar_indice(productos["codigos"], codigo)
+            nombre = productos["nombres"][indice] if indice != -1 else "Desconocido"
+            print("  Código:", codigo, "| Nombre:", nombre)
+
+def consulta_productos_sin_stock(productos, inventario):
+    sin_stock = obtener_productos_sin_stock(productos["codigos"], inventario["codigos_prod"])
+    if len(sin_stock) == 0:
+        print("\nTodos los productos cargados tienen stock registrado en el inventario.")
+    else:
+        mostrar_conjunto_productos("\n--- PRODUCTOS SIN STOCK REGISTRADO ---", sin_stock, productos)
+
+def consulta_comparar_depositos(productos, inventario):
+    deposito_a = solicitar_opcion_menu("\nIngrese el primer depósito a comparar (1, 2 o 3): ", 1, 3)
+    deposito_b = solicitar_opcion_menu("Ingrese el segundo depósito a comparar (1, 2 o 3): ", 1, 3)
+    # Nueva validación: no tiene sentido comparar un depósito consigo mismo
+    while deposito_b == deposito_a:
+        print("Error: Los depósitos a comparar deben ser distintos.")
+        deposito_b = solicitar_opcion_menu("Ingrese el segundo depósito a comparar (1, 2 o 3): ", 1, 3)
+
+    # Desempaquetado de la tupla que devuelve comparar_depositos()
+    en_ambos, solo_en_a, solo_en_b = comparar_depositos(inventario["codigos_prod"], inventario["depositos"], deposito_a, deposito_b)
+
+    print("\n--- COMPARACIÓN DE DEPÓSITOS", deposito_a, "Y", deposito_b, "---")
+    mostrar_conjunto_productos("Productos con stock en ambos depósitos:", en_ambos, productos)
+    mostrar_conjunto_productos("Productos solo en el depósito " + str(deposito_a) + ":", solo_en_a, productos)
+    mostrar_conjunto_productos("Productos solo en el depósito " + str(deposito_b) + ":", solo_en_b, productos)
 
 
 # PROGRAMA PRINCIPAL (MENÚ)
@@ -980,9 +1071,11 @@ if logged_in:
                 print("(3) Ver depósitos con stock")
                 print("(4) Cantidad total de unidades por categoría y depósito")
                 print("(5) Ver valor total de stock por categoría")
+                print("(6) Ver productos sin stock registrado")
+                print("(7) Comparar productos entre dos depósitos")
                 print("(0) Volver atrás")
                 
-                opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 5)
+                opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 7)
                 
                 if opcion_submenu_consultas == 1:
                     consulta_productos_en_stock(productos, inventario)
@@ -994,6 +1087,10 @@ if logged_in:
                     consulta_unidades_categoria_deposito(inv_codigos, inv_codigos_cat, inv_codigos_prod, inv_cantidades, inv_depositos)
                 elif opcion_submenu_consultas == 5:
                     mostrar_valor_stock_por_categoria(inventario, productos, categorias)
+                elif opcion_submenu_consultas == 6:
+                    consulta_productos_sin_stock(productos, inventario)
+                elif opcion_submenu_consultas == 7:
+                    consulta_comparar_depositos(productos, inventario)
         elif opcion_menu == 5:
             administrar_usuarios_bloqueados(usuarios)
 
