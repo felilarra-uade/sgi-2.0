@@ -2,51 +2,95 @@ import re
 from functools import reduce
 
 # VALIDACIONES DE INPUT
-# Usamos try-except para atajar el error si el usuario ingresa un string en vez de un número.
-def es_entero(var_str):
-    try:
-        int(var_str)
-        return True     
-    except:
-        return False
+# MANEJO DE EXCEPCIONES (Agustín Poggi - Segunda Parte)
+# Cada dato numérico se valida en dos pasos:
+#   1) Una función "convertir_..." que recibe el texto, intenta convertirlo y, si el dato no sirve,
+#      lanza (raise) un ValueError con un mensaje claro para el usuario. No usa input() ni print().
+#   2) Una función "pedir_..." que le pide el dato al usuario, llama a la función de conversión dentro
+#      de un try y, si se produce el ValueError, lo atrapa (except) y muestra el mensaje sin cortar el programa.
+# Antes se usaba es_entero()/es_float() con un "except:" general, que atrapaba cualquier error sin distinguirlo.
+# Ahora solo se atrapa ValueError, que es el error que corresponde a un dato con formato o valor incorrecto.
 
-def es_float(var_str):
+def convertir_opcion(texto, min_opcion, max_opcion):
+    # Convierte la opción ingresada a entero y controla que esté dentro del rango del menú.
     try:
-        float(var_str)
-        return True 
-    except:
-        return False
+        opcion = int(texto)
+    except ValueError:
+        # int() lanza ValueError si el texto tiene letras, símbolos o decimales.
+        # Lo relanzamos con un mensaje entendible en lugar del mensaje técnico de Python.
+        raise ValueError(f"Ingrese un número entero entre {min_opcion} y {max_opcion}.")
+    if opcion < min_opcion or opcion > max_opcion:
+        raise ValueError(f"La opción {opcion} no existe. Ingrese una opción entre {min_opcion} y {max_opcion}.")
+    return opcion
+
+def convertir_entero_positivo(texto):
+    # Convierte el texto a entero y controla que sea mayor a 0 (se usa para cantidades).
+    try:
+        valor = int(texto)
+    except ValueError:
+        raise ValueError("Debe ingresar un número entero, sin letras, símbolos ni decimales.")
+    if valor <= 0:
+        raise ValueError("El número debe ser mayor a 0.")
+    return valor
+
+def convertir_float_positivo(texto):
+    # Convierte el texto a número decimal y controla que sea un valor real y mayor a 0 (se usa para precios y recargos).
+    try:
+        valor = float(texto)
+    except ValueError:
+        raise ValueError("Debe ingresar un número. Use punto para los decimales (ej: 1500.50).")
+    # float() acepta los textos "nan" (Not a Number) e "inf" (infinito)
+    # sin dar error, por eso un precio "nan" se guardaba como válido. Hay que rechazarlos a mano con raise.
+    # Además, "nan <= 0" da False, por lo que la validación de mayor a 0 no alcanzaba para detectarlo.
+    if valor != valor:  # NaN es el único valor que no es igual a sí mismo
+        raise ValueError("'nan' no es un número válido.")
+    if valor == float("inf"):  # "inf" o números enormes como "1e999" se convierten en infinito
+        raise ValueError("El número ingresado no es válido (es infinito o demasiado grande).")
+    if valor <= 0:  # también descarta "-inf"
+        raise ValueError("El número debe ser mayor a 0.")
+    return valor
 
 # Usada para validar las opciones de menú, asegurando que el usuario ingrese un número dentro del rango permitido.
 def solicitar_opcion_menu(mensaje, min_opcion, max_opcion):
-    dato = input(mensaje)
-    while not es_entero(dato) or int(dato) < min_opcion or int(dato) > max_opcion:
-        print(f"Error: Ingrese una opción válida ({min_opcion} a {max_opcion}).")
-        dato = input(mensaje)
-    return int(dato)
+    opcion = None
+    while opcion is None:
+        try:
+            opcion = convertir_opcion(input(mensaje), min_opcion, max_opcion)
+        except ValueError as error:
+            print("Error:", error)
+    return opcion
 
-# Validamos que el input no quede vacío y que no contenga solo números usando las validaciones.
 def pedir_entero(mensaje):
-    # Valida que el ingreso sea un número entero y mayor a cero (para códigos y cantidades).
+    # Pide un número entero mayor a cero (para cantidades).
     # Si el usuario escribe 'volver', se corta el while y se devuelve None para cancelar la operación.
-    dato = input(mensaje)
-    while dato.strip().lower() != "volver" and (not es_entero(dato) or int(dato) <= 0):
-        print("Error: Debe ingresar un número entero positivo mayor a 0.")
-        dato = input(mensaje)
-    if dato.strip().lower() == "volver":
-        return None
-    return int(dato)
+    valor = None
+    cancelado = False
+    while valor is None and not cancelado:
+        dato = input(mensaje).strip()
+        if dato.lower() == "volver":
+            cancelado = True
+        else:
+            try:
+                valor = convertir_entero_positivo(dato)
+            except ValueError as error:
+                print("Error:", error)
+    return valor
 
 def pedir_float(mensaje):
-    # Valida que el ingreso sea un número decimal y mayor a cero (para precios y recargos).
+    # Pide un número decimal mayor a cero (para precios y recargos).
     # Si el usuario escribe 'volver', se corta el while y se devuelve None para cancelar la operación.
-    dato = input(mensaje)
-    while dato.strip().lower() != "volver" and (not es_float(dato) or float(dato) <= 0):
-        print("Error: Debe ingresar un número válido mayor a 0.")
-        dato = input(mensaje)
-    if dato.strip().lower() == "volver":
-        return None
-    return float(dato)
+    valor = None
+    cancelado = False
+    while valor is None and not cancelado:
+        dato = input(mensaje).strip()
+        if dato.lower() == "volver":
+            cancelado = True
+        else:
+            try:
+                valor = convertir_float_positivo(dato)
+            except ValueError as error:
+                print("Error:", error)
+    return valor
 
 # Validación de nombres con expresión regulares.
 # Patrón: solo letras (incluye tildes y ñ) y espacios.
@@ -955,143 +999,151 @@ def consulta_comparar_depositos(productos, inventario):
 
 
 # PROGRAMA PRINCIPAL (MENÚ)
-logged_in = iniciar_sesion(usuarios)
-rol_actual = logged_in["rol"] if logged_in else None
+# Manejo de interrupciones (Agustín Poggi - Segunda Parte):
+# Si el usuario corta el programa con Ctrl+C (KeyboardInterrupt) o se cierra la entrada de datos con
+# Ctrl+D / Ctrl+Z (EOFError), Python terminaba mostrando un error técnico en pantalla.
+# Ahora se atrapan solo esas dos excepciones (agrupadas en una tupla) y se muestra un mensaje claro.
+# El bloque finally se ejecuta siempre, haya o no excepción, para mostrar el mensaje de salida.
+try:
+    logged_in = iniciar_sesion(usuarios)
+    rol_actual = logged_in["rol"] if logged_in else None
 
-opcion_menu = 1
-opcion_submenu_categoria = 1
-opcion_submenu_inventario = 1
-opcion_submenu_consultas = 1
+    opcion_menu = 1
+    opcion_submenu_categoria = 1
+    opcion_submenu_inventario = 1
+    opcion_submenu_consultas = 1
 
-if logged_in:
-    while opcion_menu != 999:
-        print("\nElija una de las siguientes opciones:")
-        print("(1) ABM de producto")
-        print("(2) ABM de categoria")
-        print("(3) ABM de inventario")
-        print("(4) Realizar consultas sobre el stock")
-        if rol_actual == "admin":
-            print("(5) Administración de usuarios bloqueados")
-        print("(0) Salir del sistema")
+    if logged_in:
+        while opcion_menu != 999:
+            print("\nElija una de las siguientes opciones:")
+            print("(1) ABM de producto")
+            print("(2) ABM de categoria")
+            print("(3) ABM de inventario")
+            print("(4) Realizar consultas sobre el stock")
+            if rol_actual == "admin":
+                print("(5) Administración de usuarios bloqueados")
+            print("(0) Salir del sistema")
 
-        opcion_maxima = 5 if rol_actual == "admin" else 4
-        opcion_menu = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, opcion_maxima)
+            opcion_maxima = 5 if rol_actual == "admin" else 4
+            opcion_menu = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, opcion_maxima)
 
-        if opcion_menu == 0:
-            print("Quiere salir de la app?")
-            salir = solicitar_opcion_menu("1 para salir 2 para quedarse: ", 1, 2)
-            if salir == 1:
-                opcion_menu = 999
-            # si elige quedarse (2), el while vuelve a imprimir el menú principal completo desde el inicio     
-        
-        if opcion_menu == 1:
-            opcion_submenu_producto = -1 
-            while opcion_submenu_producto != 0: 
-                print("\n--- ABM PRODUCTOS ---")
-                print("(1) Alta de producto")
-                print("(2) Baja de producto")
-                print("(3) Modificar un producto")
-                print("(4) Lista de productos")
-                print("(5) Buscar producto (Secuencial)")
-                print("(6) Buscar producto (Binaria)")
-                print("(7) Buscar productos por palabras clave")
-                print("(8) Etiquetas de productos")
-                print("(0) Volver atrás")
+            if opcion_menu == 0:
+                print("Quiere salir de la app?")
+                salir = solicitar_opcion_menu("1 para salir 2 para quedarse: ", 1, 2)
+                if salir == 1:
+                    opcion_menu = 999
+                # si elige quedarse (2), el while vuelve a imprimir el menú principal completo desde el inicio     
 
-                opcion_submenu_producto = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 8)
-                
-                if opcion_submenu_producto == 1:
-                    alta_producto(prod_codigos, prod_nombres, prod_precios)
-                elif opcion_submenu_producto == 2:
-                    baja_producto(prod_codigos, prod_nombres, prod_precios, inv_codigos_prod)
-                elif opcion_submenu_producto == 3:
-                    modificar_producto(prod_codigos, prod_nombres, prod_precios)
-                elif opcion_submenu_producto == 4:
-                    ordenar_listas_paralelas([prod_codigos, prod_nombres, prod_precios], 0)
-                    listar_productos(prod_codigos, prod_nombres, prod_precios)
-                elif opcion_submenu_producto == 5:
-                    buscar_producto_secuencial(prod_codigos, prod_nombres, prod_precios)
-                elif opcion_submenu_producto == 6:
-                    buscar_producto_binaria(prod_codigos, prod_nombres, prod_precios)
-                elif opcion_submenu_producto == 7:
-                    buscar_producto_por_palabras(prod_nombres)
-                elif opcion_submenu_producto == 8:
-                    mostrar_etiquetas_productos(prod_nombres)
+            if opcion_menu == 1:
+                opcion_submenu_producto = -1 
+                while opcion_submenu_producto != 0: 
+                    print("\n--- ABM PRODUCTOS ---")
+                    print("(1) Alta de producto")
+                    print("(2) Baja de producto")
+                    print("(3) Modificar un producto")
+                    print("(4) Lista de productos")
+                    print("(5) Buscar producto (Secuencial)")
+                    print("(6) Buscar producto (Binaria)")
+                    print("(7) Buscar productos por palabras clave")
+                    print("(8) Etiquetas de productos")
+                    print("(0) Volver atrás")
 
-        elif opcion_menu == 2:
-            opcion_submenu_categoria = -1
-            while opcion_submenu_categoria != 0: 
-                print("\n--- ABM CATEGORÍAS ---")
-                print("(1) Alta de categoria")
-                print("(2) Baja de categoria")
-                print("(3) Modificar una categoria")
-                print("(4) Lista de categorias")
-                print("(0) Volver atrás")
-                
-                opcion_submenu_categoria = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
-                
-                if opcion_submenu_categoria == 1:
-                    alta_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
-                elif opcion_submenu_categoria == 2:
-                    baja_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados, inv_codigos_cat)
-                elif opcion_submenu_categoria == 3:
-                    modificar_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
-                elif opcion_submenu_categoria == 4:
-                    ordenar_listas_paralelas([cat_codigos, cat_nombres, cat_recargos, cat_estados], 1)
-                    listar_categorias(cat_codigos, cat_nombres, cat_recargos, cat_estados)
+                    opcion_submenu_producto = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 8)
 
-        elif opcion_menu == 3:
-            opcion_submenu_inventario = -1
-            while opcion_submenu_inventario != 0: 
-                print("\n--- ABM INVENTARIO ---")
-                print("(1) Alta de inventario")
-                print("(2) Baja de inventario")
-                print("(3) Modificar inventario")
-                print("(4) Lista de inventario")
-                print("(0) Volver atrás")
+                    if opcion_submenu_producto == 1:
+                        alta_producto(prod_codigos, prod_nombres, prod_precios)
+                    elif opcion_submenu_producto == 2:
+                        baja_producto(prod_codigos, prod_nombres, prod_precios, inv_codigos_prod)
+                    elif opcion_submenu_producto == 3:
+                        modificar_producto(prod_codigos, prod_nombres, prod_precios)
+                    elif opcion_submenu_producto == 4:
+                        ordenar_listas_paralelas([prod_codigos, prod_nombres, prod_precios], 0)
+                        listar_productos(prod_codigos, prod_nombres, prod_precios)
+                    elif opcion_submenu_producto == 5:
+                        buscar_producto_secuencial(prod_codigos, prod_nombres, prod_precios)
+                    elif opcion_submenu_producto == 6:
+                        buscar_producto_binaria(prod_codigos, prod_nombres, prod_precios)
+                    elif opcion_submenu_producto == 7:
+                        buscar_producto_por_palabras(prod_nombres)
+                    elif opcion_submenu_producto == 8:
+                        mostrar_etiquetas_productos(prod_nombres)
 
-                opcion_submenu_inventario = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
+            elif opcion_menu == 2:
+                opcion_submenu_categoria = -1
+                while opcion_submenu_categoria != 0: 
+                    print("\n--- ABM CATEGORÍAS ---")
+                    print("(1) Alta de categoria")
+                    print("(2) Baja de categoria")
+                    print("(3) Modificar una categoria")
+                    print("(4) Lista de categorias")
+                    print("(0) Volver atrás")
 
-                if opcion_submenu_inventario == 1:
-                    alta_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
-                elif opcion_submenu_inventario == 2:
-                    baja_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
-                elif opcion_submenu_inventario == 3:
-                    modificar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
-                elif opcion_submenu_inventario == 4:
-                    ordenar_listas_paralelas([inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos], 3)
-                    listar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
+                    opcion_submenu_categoria = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
 
-        elif opcion_menu == 4:
-            opcion_submenu_consultas = -1
-            while opcion_submenu_consultas != 0: 
-                print("\n--- CONSULTAS ---")
-                print("(1) Ver productos en stock")
-                print("(2) Ver categorías con stock")
-                print("(3) Ver depósitos con stock")
-                print("(4) Cantidad total de unidades por categoría y depósito")
-                print("(5) Ver valor total de stock por categoría")
-                print("(6) Ver productos sin stock registrado")
-                print("(7) Comparar productos entre dos depósitos")
-                print("(0) Volver atrás")
-                
-                opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 7)
-                
-                if opcion_submenu_consultas == 1:
-                    consulta_productos_en_stock(productos, inventario)
-                elif opcion_submenu_consultas == 2:
-                    consulta_por_categoria(categorias, inventario)
-                elif opcion_submenu_consultas == 3:
-                     consulta_por_deposito(inv_codigos, inv_depositos, inv_codigos_prod, inv_cantidades)
-                elif opcion_submenu_consultas == 4:
-                    consulta_unidades_categoria_deposito(inv_codigos, inv_codigos_cat, inv_codigos_prod, inv_cantidades, inv_depositos)
-                elif opcion_submenu_consultas == 5:
-                    mostrar_valor_stock_por_categoria(inventario, productos, categorias)
-                elif opcion_submenu_consultas == 6:
-                    consulta_productos_sin_stock(productos, inventario)
-                elif opcion_submenu_consultas == 7:
-                    consulta_comparar_depositos(productos, inventario)
-        elif opcion_menu == 5:
-            administrar_usuarios_bloqueados(usuarios)
+                    if opcion_submenu_categoria == 1:
+                        alta_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
+                    elif opcion_submenu_categoria == 2:
+                        baja_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados, inv_codigos_cat)
+                    elif opcion_submenu_categoria == 3:
+                        modificar_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
+                    elif opcion_submenu_categoria == 4:
+                        ordenar_listas_paralelas([cat_codigos, cat_nombres, cat_recargos, cat_estados], 1)
+                        listar_categorias(cat_codigos, cat_nombres, cat_recargos, cat_estados)
 
+            elif opcion_menu == 3:
+                opcion_submenu_inventario = -1
+                while opcion_submenu_inventario != 0: 
+                    print("\n--- ABM INVENTARIO ---")
+                    print("(1) Alta de inventario")
+                    print("(2) Baja de inventario")
+                    print("(3) Modificar inventario")
+                    print("(4) Lista de inventario")
+                    print("(0) Volver atrás")
+
+                    opcion_submenu_inventario = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
+
+                    if opcion_submenu_inventario == 1:
+                        alta_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
+                    elif opcion_submenu_inventario == 2:
+                        baja_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
+                    elif opcion_submenu_inventario == 3:
+                        modificar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
+                    elif opcion_submenu_inventario == 4:
+                        ordenar_listas_paralelas([inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos], 3)
+                        listar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
+
+            elif opcion_menu == 4:
+                opcion_submenu_consultas = -1
+                while opcion_submenu_consultas != 0: 
+                    print("\n--- CONSULTAS ---")
+                    print("(1) Ver productos en stock")
+                    print("(2) Ver categorías con stock")
+                    print("(3) Ver depósitos con stock")
+                    print("(4) Cantidad total de unidades por categoría y depósito")
+                    print("(5) Ver valor total de stock por categoría")
+                    print("(6) Ver productos sin stock registrado")
+                    print("(7) Comparar productos entre dos depósitos")
+                    print("(0) Volver atrás")
+
+                    opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 7)
+
+                    if opcion_submenu_consultas == 1:
+                        consulta_productos_en_stock(productos, inventario)
+                    elif opcion_submenu_consultas == 2:
+                        consulta_por_categoria(categorias, inventario)
+                    elif opcion_submenu_consultas == 3:
+                         consulta_por_deposito(inv_codigos, inv_depositos, inv_codigos_prod, inv_cantidades)
+                    elif opcion_submenu_consultas == 4:
+                        consulta_unidades_categoria_deposito(inv_codigos, inv_codigos_cat, inv_codigos_prod, inv_cantidades, inv_depositos)
+                    elif opcion_submenu_consultas == 5:
+                        mostrar_valor_stock_por_categoria(inventario, productos, categorias)
+                    elif opcion_submenu_consultas == 6:
+                        consulta_productos_sin_stock(productos, inventario)
+                    elif opcion_submenu_consultas == 7:
+                        consulta_comparar_depositos(productos, inventario)
+            elif opcion_menu == 5:
+                administrar_usuarios_bloqueados(usuarios)
+except (KeyboardInterrupt, EOFError):
+    print("\n\nEjecución interrumpida por el usuario.")
+finally:
     print("\nSaliendo del sistema. ¡Gracias por usarlo!")
