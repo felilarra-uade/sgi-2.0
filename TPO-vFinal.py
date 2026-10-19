@@ -232,52 +232,55 @@ def busqueda_binaria(lista_codigos, codigo_buscado):
 
 
 # DATOS INICIALES DEL SISTEMA
-# DATOS HARDCODEADOS DE USUARIOS (diccionario anidado: usuario -> datos del usuario)
-usuarios = {
-    "admin": {"contrasena": "inventario2026", "rol": "admin", "intentos_fallidos": 0, "bloqueado": False},
-    "lzanino": {"contrasena": "clave123", "rol": "usuario", "intentos_fallidos": 0, "bloqueado": False},
-}
+def datos_por_defecto():
+    # DATOS HARDCODEADOS DE USUARIOS (diccionario anidado: usuario -> datos del usuario)
+    usuarios = {
+        "admin": {"contrasena": "inventario2026", "rol": "admin", "intentos_fallidos": 0, "bloqueado": False},
+        "lzanino": {"contrasena": "clave123", "rol": "usuario", "intentos_fallidos": 0, "bloqueado": False},
+    }
 
-#  DATOS HARDCODEADOS (LISTAS PARALELAS)
-# Los códigos ahora tienen formato alfanumérico validable por RE:
-# PRD-NNN (productos), CAT-NN (categorías), INV-NNNN (inventario).
-prod_codigos = ["PRD-101", "PRD-102", "PRD-103", "PRD-104", "PRD-105", "PRD-106", "PRD-107", "PRD-108", "PRD-109", "PRD-110"]
-prod_nombres = ["Cuaderno", "Lapicera", "Goma", "Carpeta", "Marcador", "Tijera", "Regla", "Corrector", "Mochila", "Cartuchera"]
-prod_precios = [1500.0, 200.0, 150.0, 2500.0, 800.0, 1200.0, 300.0, 600.0, 15000.0, 3500.0]
+    #  DATOS HARDCODEADOS (LISTAS PARALELAS)
+    # Los códigos ahora tienen formato alfanumérico validable por RE:
+    # PRD-NNN (productos), CAT-NN (categorías), INV-NNNN (inventario).
+    prod_codigos = ["PRD-101", "PRD-102", "PRD-103", "PRD-104", "PRD-105", "PRD-106", "PRD-107", "PRD-108", "PRD-109", "PRD-110"]
+    prod_nombres = ["Cuaderno", "Lapicera", "Goma", "Carpeta", "Marcador", "Tijera", "Regla", "Corrector", "Mochila", "Cartuchera"]
+    prod_precios = [1500.0, 200.0, 150.0, 2500.0, 800.0, 1200.0, 300.0, 600.0, 15000.0, 3500.0]
 
-cat_codigos = ["CAT-01", "CAT-02", "CAT-03", "CAT-04", "CAT-05", "CAT-06", "CAT-07", "CAT-08", "CAT-09", "CAT-10"]
-cat_nombres = ["Papeleria", "Escritura", "Escolares", "Oficina", "Arte", "Mochilas", "Tecnologia", "Libros", "Regalos", "Varios"]
-cat_recargos = [15.0, 10.0, 20.0, 25.0, 30.0, 35.0, 40.0, 5.0, 50.0, 10.0]
-cat_estados = [1, 1, 1, 0, 1, 1, 0, 1, 1, 1]
+    cat_codigos = ["CAT-01", "CAT-02", "CAT-03", "CAT-04", "CAT-05", "CAT-06", "CAT-07", "CAT-08", "CAT-09", "CAT-10"]
+    cat_nombres = ["Papeleria", "Escritura", "Escolares", "Oficina", "Arte", "Mochilas", "Tecnologia", "Libros", "Regalos", "Varios"]
+    cat_recargos = [15.0, 10.0, 20.0, 25.0, 30.0, 35.0, 40.0, 5.0, 50.0, 10.0]
+    cat_estados = [1, 1, 1, 0, 1, 1, 0, 1, 1, 1]
 
-inv_codigos = ["INV-1001", "INV-1002", "INV-1003", "INV-1004", "INV-1005", "INV-1006", "INV-1007", "INV-1008", "INV-1009", "INV-1010"]
-inv_codigos_prod = ["PRD-101", "PRD-102", "PRD-103", "PRD-104", "PRD-105", "PRD-106", "PRD-107", "PRD-108", "PRD-109", "PRD-110"]
-inv_codigos_cat = ["CAT-01", "CAT-02", "CAT-03", "CAT-01", "CAT-05", "CAT-03", "CAT-03", "CAT-03", "CAT-06", "CAT-03"]
-inv_cantidades = [50, 200, 100, 30, 150, 80, 45, 120, 90, 15]
-inv_depositos = [1, 1, 2, 1, 3, 2, 1, 2, 1, 3]
+    inv_codigos = ["INV-1001", "INV-1002", "INV-1003", "INV-1004", "INV-1005", "INV-1006", "INV-1007", "INV-1008", "INV-1009", "INV-1010"]
+    inv_codigos_prod = ["PRD-101", "PRD-102", "PRD-103", "PRD-104", "PRD-105", "PRD-106", "PRD-107", "PRD-108", "PRD-109", "PRD-110"]
+    inv_codigos_cat = ["CAT-01", "CAT-02", "CAT-03", "CAT-01", "CAT-05", "CAT-03", "CAT-03", "CAT-03", "CAT-06", "CAT-03"]
+    inv_cantidades = [50, 200, 100, 30, 150, 80, 45, 120, 90, 15]
+    inv_depositos = [1, 1, 2, 1, 3, 2, 1, 2, 1, 3]
 
 
-# DICCIONARIO DE LISTAS
-productos = {
-    "codigos": prod_codigos,
-    "nombres": prod_nombres,
-    "precios": prod_precios
-}
+    # DICCIONARIO DE LISTAS
+    productos = {
+        "codigos": prod_codigos,
+        "nombres": prod_nombres,
+        "precios": prod_precios
+    }
 
-categorias = {
-    "codigos": cat_codigos,
-    "nombres": cat_nombres,
-    "recargos": cat_recargos,
-    "estados": cat_estados
-}
+    categorias = {
+        "codigos": cat_codigos,
+        "nombres": cat_nombres,
+        "recargos": cat_recargos,
+        "estados": cat_estados
+    }
 
-inventario = {
-    "codigos": inv_codigos,
-    "codigos_prod": inv_codigos_prod,
-    "codigos_cat": inv_codigos_cat,
-    "cantidades": inv_cantidades,
-    "depositos": inv_depositos
-}
+    inventario = {
+        "codigos": inv_codigos,
+        "codigos_prod": inv_codigos_prod,
+        "codigos_cat": inv_codigos_cat,
+        "cantidades": inv_cantidades,
+        "depositos": inv_depositos
+    }
+
+    return {"usuarios": usuarios, "productos": productos, "categorias": categorias, "inventario": inventario}
 
 
 # MÓDULO USUARIOS Y LOGIN
@@ -1004,146 +1007,170 @@ def consulta_comparar_depositos(productos, inventario):
 # Ctrl+D / Ctrl+Z (EOFError), Python terminaba mostrando un error técnico en pantalla.
 # Ahora se atrapan solo esas dos excepciones (agrupadas en una tupla) y se muestra un mensaje claro.
 # El bloque finally se ejecuta siempre, haya o no excepción, para mostrar el mensaje de salida.
-try:
-    logged_in = iniciar_sesion(usuarios)
-    rol_actual = logged_in["rol"] if logged_in else None
+def main():
+    datos = datos_por_defecto()
+    usuarios = datos["usuarios"]
+    productos = datos["productos"]
+    categorias = datos["categorias"]
+    inventario = datos["inventario"]
 
-    opcion_menu = 1
-    opcion_submenu_categoria = 1
-    opcion_submenu_inventario = 1
-    opcion_submenu_consultas = 1
+    prod_codigos = productos["codigos"]
+    prod_nombres = productos["nombres"]
+    prod_precios = productos["precios"]
 
-    if logged_in:
-        while opcion_menu != 999:
-            print("\nElija una de las siguientes opciones:")
-            print("(1) ABM de producto")
-            print("(2) ABM de categoria")
-            print("(3) ABM de inventario")
-            print("(4) Realizar consultas sobre el stock")
-            if rol_actual == "admin":
-                print("(5) Administración de usuarios bloqueados")
-            print("(0) Salir del sistema")
+    cat_codigos = categorias["codigos"]
+    cat_nombres = categorias["nombres"]
+    cat_recargos = categorias["recargos"]
+    cat_estados = categorias["estados"]
 
-            opcion_maxima = 5 if rol_actual == "admin" else 4
-            opcion_menu = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, opcion_maxima)
+    inv_codigos = inventario["codigos"]
+    inv_codigos_prod = inventario["codigos_prod"]
+    inv_codigos_cat = inventario["codigos_cat"]
+    inv_cantidades = inventario["cantidades"]
+    inv_depositos = inventario["depositos"]
 
-            if opcion_menu == 0:
-                print("Quiere salir de la app?")
-                salir = solicitar_opcion_menu("1 para salir 2 para quedarse: ", 1, 2)
-                if salir == 1:
-                    opcion_menu = 999
-                # si elige quedarse (2), el while vuelve a imprimir el menú principal completo desde el inicio     
+    try:
+        logged_in = iniciar_sesion(usuarios)
+        rol_actual = logged_in["rol"] if logged_in else None
 
-            if opcion_menu == 1:
-                opcion_submenu_producto = -1 
-                while opcion_submenu_producto != 0: 
-                    print("\n--- ABM PRODUCTOS ---")
-                    print("(1) Alta de producto")
-                    print("(2) Baja de producto")
-                    print("(3) Modificar un producto")
-                    print("(4) Lista de productos")
-                    print("(5) Buscar producto (Secuencial)")
-                    print("(6) Buscar producto (Binaria)")
-                    print("(7) Buscar productos por palabras clave")
-                    print("(8) Etiquetas de productos")
-                    print("(0) Volver atrás")
+        opcion_menu = 1
+        opcion_submenu_categoria = 1
+        opcion_submenu_inventario = 1
+        opcion_submenu_consultas = 1
 
-                    opcion_submenu_producto = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 8)
+        if logged_in:
+            while opcion_menu != 999:
+                print("\nElija una de las siguientes opciones:")
+                print("(1) ABM de producto")
+                print("(2) ABM de categoria")
+                print("(3) ABM de inventario")
+                print("(4) Realizar consultas sobre el stock")
+                if rol_actual == "admin":
+                    print("(5) Administración de usuarios bloqueados")
+                print("(0) Salir del sistema")
 
-                    if opcion_submenu_producto == 1:
-                        alta_producto(prod_codigos, prod_nombres, prod_precios)
-                    elif opcion_submenu_producto == 2:
-                        baja_producto(prod_codigos, prod_nombres, prod_precios, inv_codigos_prod)
-                    elif opcion_submenu_producto == 3:
-                        modificar_producto(prod_codigos, prod_nombres, prod_precios)
-                    elif opcion_submenu_producto == 4:
-                        ordenar_listas_paralelas([prod_codigos, prod_nombres, prod_precios], 0)
-                        listar_productos(prod_codigos, prod_nombres, prod_precios)
-                    elif opcion_submenu_producto == 5:
-                        buscar_producto_secuencial(prod_codigos, prod_nombres, prod_precios)
-                    elif opcion_submenu_producto == 6:
-                        buscar_producto_binaria(prod_codigos, prod_nombres, prod_precios)
-                    elif opcion_submenu_producto == 7:
-                        buscar_producto_por_palabras(prod_nombres)
-                    elif opcion_submenu_producto == 8:
-                        mostrar_etiquetas_productos(prod_nombres)
+                opcion_maxima = 5 if rol_actual == "admin" else 4
+                opcion_menu = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, opcion_maxima)
 
-            elif opcion_menu == 2:
-                opcion_submenu_categoria = -1
-                while opcion_submenu_categoria != 0: 
-                    print("\n--- ABM CATEGORÍAS ---")
-                    print("(1) Alta de categoria")
-                    print("(2) Baja de categoria")
-                    print("(3) Modificar una categoria")
-                    print("(4) Lista de categorias")
-                    print("(0) Volver atrás")
+                if opcion_menu == 0:
+                    print("Quiere salir de la app?")
+                    salir = solicitar_opcion_menu("1 para salir 2 para quedarse: ", 1, 2)
+                    if salir == 1:
+                        opcion_menu = 999
+                    # si elige quedarse (2), el while vuelve a imprimir el menú principal completo desde el inicio     
 
-                    opcion_submenu_categoria = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
+                if opcion_menu == 1:
+                    opcion_submenu_producto = -1 
+                    while opcion_submenu_producto != 0: 
+                        print("\n--- ABM PRODUCTOS ---")
+                        print("(1) Alta de producto")
+                        print("(2) Baja de producto")
+                        print("(3) Modificar un producto")
+                        print("(4) Lista de productos")
+                        print("(5) Buscar producto (Secuencial)")
+                        print("(6) Buscar producto (Binaria)")
+                        print("(7) Buscar productos por palabras clave")
+                        print("(8) Etiquetas de productos")
+                        print("(0) Volver atrás")
 
-                    if opcion_submenu_categoria == 1:
-                        alta_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
-                    elif opcion_submenu_categoria == 2:
-                        baja_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados, inv_codigos_cat)
-                    elif opcion_submenu_categoria == 3:
-                        modificar_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
-                    elif opcion_submenu_categoria == 4:
-                        ordenar_listas_paralelas([cat_codigos, cat_nombres, cat_recargos, cat_estados], 1)
-                        listar_categorias(cat_codigos, cat_nombres, cat_recargos, cat_estados)
+                        opcion_submenu_producto = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 8)
 
-            elif opcion_menu == 3:
-                opcion_submenu_inventario = -1
-                while opcion_submenu_inventario != 0: 
-                    print("\n--- ABM INVENTARIO ---")
-                    print("(1) Alta de inventario")
-                    print("(2) Baja de inventario")
-                    print("(3) Modificar inventario")
-                    print("(4) Lista de inventario")
-                    print("(0) Volver atrás")
+                        if opcion_submenu_producto == 1:
+                            alta_producto(prod_codigos, prod_nombres, prod_precios)
+                        elif opcion_submenu_producto == 2:
+                            baja_producto(prod_codigos, prod_nombres, prod_precios, inv_codigos_prod)
+                        elif opcion_submenu_producto == 3:
+                            modificar_producto(prod_codigos, prod_nombres, prod_precios)
+                        elif opcion_submenu_producto == 4:
+                            ordenar_listas_paralelas([prod_codigos, prod_nombres, prod_precios], 0)
+                            listar_productos(prod_codigos, prod_nombres, prod_precios)
+                        elif opcion_submenu_producto == 5:
+                            buscar_producto_secuencial(prod_codigos, prod_nombres, prod_precios)
+                        elif opcion_submenu_producto == 6:
+                            buscar_producto_binaria(prod_codigos, prod_nombres, prod_precios)
+                        elif opcion_submenu_producto == 7:
+                            buscar_producto_por_palabras(prod_nombres)
+                        elif opcion_submenu_producto == 8:
+                            mostrar_etiquetas_productos(prod_nombres)
 
-                    opcion_submenu_inventario = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
+                elif opcion_menu == 2:
+                    opcion_submenu_categoria = -1
+                    while opcion_submenu_categoria != 0: 
+                        print("\n--- ABM CATEGORÍAS ---")
+                        print("(1) Alta de categoria")
+                        print("(2) Baja de categoria")
+                        print("(3) Modificar una categoria")
+                        print("(4) Lista de categorias")
+                        print("(0) Volver atrás")
 
-                    if opcion_submenu_inventario == 1:
-                        alta_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
-                    elif opcion_submenu_inventario == 2:
-                        baja_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
-                    elif opcion_submenu_inventario == 3:
-                        modificar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
-                    elif opcion_submenu_inventario == 4:
-                        ordenar_listas_paralelas([inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos], 3)
-                        listar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
+                        opcion_submenu_categoria = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
 
-            elif opcion_menu == 4:
-                opcion_submenu_consultas = -1
-                while opcion_submenu_consultas != 0: 
-                    print("\n--- CONSULTAS ---")
-                    print("(1) Ver productos en stock")
-                    print("(2) Ver categorías con stock")
-                    print("(3) Ver depósitos con stock")
-                    print("(4) Cantidad total de unidades por categoría y depósito")
-                    print("(5) Ver valor total de stock por categoría")
-                    print("(6) Ver productos sin stock registrado")
-                    print("(7) Comparar productos entre dos depósitos")
-                    print("(0) Volver atrás")
+                        if opcion_submenu_categoria == 1:
+                            alta_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
+                        elif opcion_submenu_categoria == 2:
+                            baja_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados, inv_codigos_cat)
+                        elif opcion_submenu_categoria == 3:
+                            modificar_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
+                        elif opcion_submenu_categoria == 4:
+                            ordenar_listas_paralelas([cat_codigos, cat_nombres, cat_recargos, cat_estados], 1)
+                            listar_categorias(cat_codigos, cat_nombres, cat_recargos, cat_estados)
 
-                    opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 7)
+                elif opcion_menu == 3:
+                    opcion_submenu_inventario = -1
+                    while opcion_submenu_inventario != 0: 
+                        print("\n--- ABM INVENTARIO ---")
+                        print("(1) Alta de inventario")
+                        print("(2) Baja de inventario")
+                        print("(3) Modificar inventario")
+                        print("(4) Lista de inventario")
+                        print("(0) Volver atrás")
 
-                    if opcion_submenu_consultas == 1:
-                        consulta_productos_en_stock(productos, inventario)
-                    elif opcion_submenu_consultas == 2:
-                        consulta_por_categoria(categorias, inventario)
-                    elif opcion_submenu_consultas == 3:
-                         consulta_por_deposito(inv_codigos, inv_depositos, inv_codigos_prod, inv_cantidades)
-                    elif opcion_submenu_consultas == 4:
-                        consulta_unidades_categoria_deposito(inv_codigos, inv_codigos_cat, inv_codigos_prod, inv_cantidades, inv_depositos)
-                    elif opcion_submenu_consultas == 5:
-                        mostrar_valor_stock_por_categoria(inventario, productos, categorias)
-                    elif opcion_submenu_consultas == 6:
-                        consulta_productos_sin_stock(productos, inventario)
-                    elif opcion_submenu_consultas == 7:
-                        consulta_comparar_depositos(productos, inventario)
-            elif opcion_menu == 5:
-                administrar_usuarios_bloqueados(usuarios)
-except (KeyboardInterrupt, EOFError):
-    print("\n\nEjecución interrumpida por el usuario.")
-finally:
-    print("\nSaliendo del sistema. ¡Gracias por usarlo!")
+                        opcion_submenu_inventario = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
+
+                        if opcion_submenu_inventario == 1:
+                            alta_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
+                        elif opcion_submenu_inventario == 2:
+                            baja_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
+                        elif opcion_submenu_inventario == 3:
+                            modificar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
+                        elif opcion_submenu_inventario == 4:
+                            ordenar_listas_paralelas([inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos], 3)
+                            listar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
+
+                elif opcion_menu == 4:
+                    opcion_submenu_consultas = -1
+                    while opcion_submenu_consultas != 0: 
+                        print("\n--- CONSULTAS ---")
+                        print("(1) Ver productos en stock")
+                        print("(2) Ver categorías con stock")
+                        print("(3) Ver depósitos con stock")
+                        print("(4) Cantidad total de unidades por categoría y depósito")
+                        print("(5) Ver valor total de stock por categoría")
+                        print("(6) Ver productos sin stock registrado")
+                        print("(7) Comparar productos entre dos depósitos")
+                        print("(0) Volver atrás")
+
+                        opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 7)
+
+                        if opcion_submenu_consultas == 1:
+                            consulta_productos_en_stock(productos, inventario)
+                        elif opcion_submenu_consultas == 2:
+                            consulta_por_categoria(categorias, inventario)
+                        elif opcion_submenu_consultas == 3:
+                             consulta_por_deposito(inv_codigos, inv_depositos, inv_codigos_prod, inv_cantidades)
+                        elif opcion_submenu_consultas == 4:
+                            consulta_unidades_categoria_deposito(inv_codigos, inv_codigos_cat, inv_codigos_prod, inv_cantidades, inv_depositos)
+                        elif opcion_submenu_consultas == 5:
+                            mostrar_valor_stock_por_categoria(inventario, productos, categorias)
+                        elif opcion_submenu_consultas == 6:
+                            consulta_productos_sin_stock(productos, inventario)
+                        elif opcion_submenu_consultas == 7:
+                            consulta_comparar_depositos(productos, inventario)
+                elif opcion_menu == 5:
+                    administrar_usuarios_bloqueados(usuarios)
+    except (KeyboardInterrupt, EOFError):
+        print("\n\nEjecución interrumpida por el usuario.")
+    finally:
+        print("\nSaliendo del sistema. ¡Gracias por usarlo!")
+
+main()
