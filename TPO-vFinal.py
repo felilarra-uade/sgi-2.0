@@ -1195,4 +1195,5 @@ def main():
     finally:
         print("\nSaliendo del sistema. ¡Gracias por usarlo!")
 
-main()
+if __name__ == "__main__":
+    main()
