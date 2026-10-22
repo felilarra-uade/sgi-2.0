@@ -746,6 +746,17 @@ def consulta_por_categoria(categoria, inventario):
 
 
 # MÓDULO INVENTARIO
+# Regla: un producto solo puede pertenecer a una categoría. Si ya tiene registros de inventario,
+# todos tienen que estar en la misma categoría. Se controla en el alta y en la modificación.
+def buscar_categoria_en_conflicto(inv_prods, inv_cats, cod_prod, cod_cat, indice_ignorado):
+    # Recorre los registros buscando otro del mismo producto pero con una categoría distinta.
+    # indice_ignorado es el registro que se está modificando (no cuenta como conflicto); en el alta se pasa -1.
+    # Devuelve el código de la primera categoría en conflicto, o None si no hay conflicto.
+    for i in range(len(inv_prods)):
+        if i != indice_ignorado and inv_prods[i] == cod_prod and inv_cats[i] != cod_cat:
+            return inv_cats[i]
+    return None
+
 def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_codigos, cat_codigos, cat_estados):
     codigo = pedir_codigo("\nIngrese el código del nuevo registro de inventario (formato INV-0000) (o 'volver' para cancelar): ", FORMATO_INVENTARIO)
     if codigo is None:
@@ -771,6 +782,10 @@ def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_cod
             return
         if cat_estados[indice_cat] == 0:
             print("Error: La categoría está inactiva. No se puede cargar stock. Alta cancelada.")
+            return
+        categoria_en_conflicto = buscar_categoria_en_conflicto(inv_prods, inv_cats, cod_prod, cod_cat, -1)
+        if categoria_en_conflicto is not None:
+            print("Error: El producto " + cod_prod + " ya tiene stock en la categoría " + categoria_en_conflicto + ". Un producto solo puede pertenecer a una categoría. Use esa categoría o dé de baja sus otros registros de inventario. Alta cancelada.")
             return
         cantidad = pedir_entero("Ingrese la cantidad de unidades (o 'volver' para cancelar): ")
         if cantidad is None:
@@ -830,6 +845,10 @@ def modificar_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, pro
             return
         if cat_estados[indice_cat] == 0:
             print("Error: La categoría está inactiva. No se puede asignar stock a esta categoría. Modificación cancelada.")
+            return
+        categoria_en_conflicto = buscar_categoria_en_conflicto(inv_prods, inv_cats, nuevo_cod_prod, nuevo_cod_cat, indice)
+        if categoria_en_conflicto is not None:
+            print("Error: El producto " + nuevo_cod_prod + " ya tiene stock en la categoría " + categoria_en_conflicto + ". Un producto solo puede pertenecer a una categoría. Use esa categoría o dé de baja sus otros registros de inventario. Modificación cancelada.")
             return
         nueva_cant = pedir_entero("Ingrese la nueva cantidad (o 'volver' para cancelar): ")
         if nueva_cant is None:
