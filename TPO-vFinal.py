@@ -1141,25 +1141,59 @@ def calcular_stock_por_producto(productos, inventario):
             stock[codigo_prod] += inventario["cantidades"][i]
     return stock
 
-def armar_bloque_historial_stock(usuario, accion, entidad, codigo, productos, stock_por_producto):
-    # Arma el bloque que se agrega al archivo: un encabezado con la operación, una línea por
-    #producto con su stock, el total
-    bloque = "=== " + accion + " de " + entidad + " " + codigo + " (usuario: " + usuario + ") ===\n"
-    total = 0
+def calcular_filas_stock(productos, categorias, inventario):
+    # Devuelve una lista de tuplas (codigo, nombre, unidades, precio, recargo, total_sin_recargo, total_con_recargo),
+    # una por producto y en el orden de productos["codigos"], con los números sin formato.
+    # Como un producto solo puede estar en una categoría, su recargo sale de cualquiera de sus registros
+    # de inventario (se usa el primero). Si no tiene registros, el recargo es 0.
+    stock_por_producto = calcular_stock_por_producto(productos, inventario)
+    filas = []
     for i in range(len(productos["codigos"])):
         codigo_prod = productos["codigos"][i]
-        unidades = stock_por_producto.get(codigo_prod, 0)
-        bloque += codigo_prod + " - " + productos["nombres"][i] + ": " + str(unidades) + " unidades\n"
-        total += unidades
-    bloque += "Total: " + str(total) + " unidades\n"
+        unidades = stock_por_producto[codigo_prod]
+        precio = productos["precios"][i]
+        recargo = 0
+        indice_inv = buscar_indice(inventario["codigos_prod"], codigo_prod)
+        if indice_inv != -1:
+            indice_cat = buscar_indice(categorias["codigos"], inventario["codigos_cat"][indice_inv])
+            if indice_cat != -1:
+                recargo = categorias["recargos"][indice_cat]
+        total_sin_recargo = unidades * precio
+        # Misma cuenta que la consulta 5 (calcular_valor_stock_por_categoria): el recargo es un porcentaje
+        total_con_recargo = unidades * precio * (1 + recargo / 100)
+        filas.append((codigo_prod, productos["nombres"][i], unidades, precio, recargo, total_sin_recargo, total_con_recargo))
+    return filas
+
+def armar_bloque_historial_stock(usuario, accion, entidad, codigo, filas):
+    # Arma el bloque que se agrega al archivo: un encabezado con la operación, una tabla con una fila
+    # por producto y los totales. Los totales se suman con los valores sin redondear.
+    # La acción se guarda en minúscula (alta, baja, modificacion): capitalize() le pone la primera letra en mayúscula
+    bloque = "OPERACION: " + accion.capitalize() + " de " + entidad + " " + codigo + " (usuario: " + usuario + ")\n"
+    bloque += "\n"
+    bloque += "STOCK TOTAL LUEGO DE LA OPERACION:\n"
+    bloque += "Producto | Nombre               | Unidades | Precio unit. | Recargo | Total sin recargo | Total con recargo\n"
+    total_unidades = 0
+    total_sin_recargo = 0
+    total_con_recargo = 0
+    for fila in filas:
+        codigo_prod, nombre, unidades, precio, recargo, sin_recargo, con_recargo = fila
+        recargo_texto = "-" if recargo == 0 else f"{recargo:.2f}%"
+        bloque += (f"{codigo_prod:<8} | {nombre:<20} | {unidades:>8} | {precio:>12.2f} | {recargo_texto:>7} | "
+                   f"{sin_recargo:>17.2f} | {con_recargo:>17.2f}\n")
+        total_unidades += unidades
+        total_sin_recargo += sin_recargo
+        total_con_recargo += con_recargo
+    bloque += "Total: " + str(total_unidades) + " unidades\n"
+    bloque += f"Total sin recargo: ${total_sin_recargo:.2f}\n"
+    bloque += f"Total con recargo: ${total_con_recargo:.2f}\n"
     bloque += "\n"
     return bloque
 
-def registrar_historial_stock(usuario, accion, entidad, codigo, productos, inventario):
+def registrar_historial_stock(usuario, accion, entidad, codigo, productos, categorias, inventario):
     # Agrega el bloque al final del archivo con "a" (si no existe, lo crea).
     # Si no se puede escribir se avisa y el programa sigue: la operación del ABM ya quedó hecha
-    stock_por_producto = calcular_stock_por_producto(productos, inventario)
-    bloque = armar_bloque_historial_stock(usuario, accion, entidad, codigo, productos, stock_por_producto)
+    filas = calcular_filas_stock(productos, categorias, inventario)
+    bloque = armar_bloque_historial_stock(usuario, accion, entidad, codigo, filas)
     try:
         with open(ARCHIVO_HISTORIAL_STOCK, "a") as archivo:
             archivo.write(bloque)
@@ -1205,7 +1239,7 @@ def consulta_historial_stock():
 
 # Los submenús del ABM también reciben el usuario que inició sesión: cuando una operación
 # se completa, la anotan en el historial
-def menu_productos(productos, inventario, usuario):
+def menu_productos(productos, inventario, categorias, usuario):
     prod_codigos = productos["codigos"]
     prod_nombres = productos["nombres"]
     prod_precios = productos["precios"]
@@ -1230,17 +1264,17 @@ def menu_productos(productos, inventario, usuario):
             codigo = alta_producto(prod_codigos, prod_nombres, prod_precios)
             if codigo is not None:
                 registrar_movimiento(usuario, "alta", "producto", codigo)
-                registrar_historial_stock(usuario, "alta", "producto", codigo, productos, inventario)
+                registrar_historial_stock(usuario, "alta", "producto", codigo, productos, categorias, inventario)
         elif opcion_submenu_producto == 2:
             codigo = baja_producto(prod_codigos, prod_nombres, prod_precios, inv_codigos_prod)
             if codigo is not None:
                 registrar_movimiento(usuario, "baja", "producto", codigo)
-                registrar_historial_stock(usuario, "baja", "producto", codigo, productos, inventario)
+                registrar_historial_stock(usuario, "baja", "producto", codigo, productos, categorias, inventario)
         elif opcion_submenu_producto == 3:
             codigo = modificar_producto(prod_codigos, prod_nombres, prod_precios)
             if codigo is not None:
                 registrar_movimiento(usuario, "modificacion", "producto", codigo)
-                registrar_historial_stock(usuario, "modificacion", "producto", codigo, productos, inventario)
+                registrar_historial_stock(usuario, "modificacion", "producto", codigo, productos, categorias, inventario)
         elif opcion_submenu_producto == 4:
             ordenar_listas_paralelas([prod_codigos, prod_nombres, prod_precios], 0)
             listar_productos(prod_codigos, prod_nombres, prod_precios)
@@ -1312,17 +1346,17 @@ def menu_inventario(inventario, productos, categorias, usuario):
             codigo = alta_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
             if codigo is not None:
                 registrar_movimiento(usuario, "alta", "inventario", codigo)
-                registrar_historial_stock(usuario, "alta", "inventario", codigo, productos, inventario)
+                registrar_historial_stock(usuario, "alta", "inventario", codigo, productos, categorias, inventario)
         elif opcion_submenu_inventario == 2:
             codigo = baja_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
             if codigo is not None:
                 registrar_movimiento(usuario, "baja", "inventario", codigo)
-                registrar_historial_stock(usuario, "baja", "inventario", codigo, productos, inventario)
+                registrar_historial_stock(usuario, "baja", "inventario", codigo, productos, categorias, inventario)
         elif opcion_submenu_inventario == 3:
             codigo = modificar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
             if codigo is not None:
                 registrar_movimiento(usuario, "modificacion", "inventario", codigo)
-                registrar_historial_stock(usuario, "modificacion", "inventario", codigo, productos, inventario)
+                registrar_historial_stock(usuario, "modificacion", "inventario", codigo, productos, categorias, inventario)
         elif opcion_submenu_inventario == 4:
             ordenar_listas_paralelas([inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos], 3)
             listar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
@@ -1412,7 +1446,7 @@ def main():
                     # si elige quedarse (2), el while vuelve a imprimir el menú principal completo desde el inicio     
 
                 if opcion_menu == 1:
-                    menu_productos(productos, inventario, usuario_actual)
+                    menu_productos(productos, inventario, categorias, usuario_actual)
                 elif opcion_menu == 2:
                     menu_categorias(categorias, inventario, usuario_actual)
                 elif opcion_menu == 3:
