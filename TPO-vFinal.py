@@ -326,7 +326,9 @@ def iniciar_sesion(usuarios):
     if not logged_in:
         print("<<<<<<<<<< Fallaste 3 intentos. Volvé a intentarlo más tarde. >>>>>>>>>>\n")
 
-    return user_data if logged_in else None
+    # Devuelve el nombre del usuario que inició sesión (o None si no pudo ingresar).
+    # Con el nombre, main() obtiene sus datos con buscar_usuario() y lo usa para el historial de movimientos.
+    return input_user if logged_in else None
 
 def listar_usuarios_bloqueados(usuarios):
     encontrado = False;
@@ -388,6 +390,7 @@ def alta_producto(codigos, nombres, precios):
         nombres.append(nombre)
         precios.append(precio)
         print("¡Producto agregado con éxito!")
+        return codigo
 
 def baja_producto(codigos, nombres, precios, inv_prods):
     codigo = pedir_codigo("\nIngrese el código del producto a eliminar (formato PRD-000) (o 'volver' para cancelar): ", FORMATO_PRODUCTO)
@@ -409,6 +412,7 @@ def baja_producto(codigos, nombres, precios, inv_prods):
         nombre_borrado = nombres.pop(indice)
         precios.pop(indice)
         print("Producto '" + nombre_borrado + "' eliminado correctamente.")
+        return codigo
 
 def modificar_producto(codigos, nombres, precios):
     codigo = pedir_codigo("\nIngrese el código del producto a modificar (formato PRD-000) (o 'volver' para cancelar): ", FORMATO_PRODUCTO)
@@ -434,6 +438,7 @@ def modificar_producto(codigos, nombres, precios):
         nombres[indice] = nuevo_nombre
         precios[indice] = nuevo_precio
         print("Producto actualizado.")
+        return codigo
 
 def listar_productos(codigos, nombres, precios):
     # Muestra el listado de productos. El armado del texto 
@@ -637,6 +642,7 @@ def alta_categoria(codigos, nombres, recargos, estados):
         recargos.append(recargo)
         estados.append(estado)
         print("¡Categoría agregada con éxito!")
+        return codigo
 
 def baja_categoria(codigos, nombres, recargos, estados, inv_cats):
     codigo = pedir_codigo("\nIngrese el código de la categoría a eliminar (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)
@@ -658,6 +664,7 @@ def baja_categoria(codigos, nombres, recargos, estados, inv_cats):
         recargos.pop(indice)
         estados.pop(indice)
         print("Categoría '" + nombre_borrado + "' eliminada correctamente.")
+        return codigo
 
 def modificar_categoria(codigos, nombres, recargos, estados):
     codigo = pedir_codigo("\nIngrese el código de la categoría a modificar (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)
@@ -685,6 +692,7 @@ def modificar_categoria(codigos, nombres, recargos, estados):
         recargos[indice] = nuevo_recargo
         estados[indice] = nuevo_estado
         print("Categoría actualizada.")
+        return codigo
 
 def listar_categorias(codigos, nombres, recargos, estados):
     # Muestra el listado de categorías. El que se encarga de armar el texto es la nueva funcion 
@@ -776,6 +784,7 @@ def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_cod
         inv_cants.append(cantidad)
         inv_deps.append(deposito)
         print("¡Registro de inventario agregado con éxito!")
+        return codigo
 
 def baja_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps):
     codigo = pedir_codigo("\nIngrese el código de inventario a eliminar (formato INV-0000) (o 'volver' para cancelar): ", FORMATO_INVENTARIO)
@@ -792,6 +801,7 @@ def baja_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps):
         inv_cants.pop(indice)
         inv_deps.pop(indice)
         print("Registro de inventario eliminado correctamente.")
+        return codigo
 
 def modificar_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_codigos, cat_codigos, cat_estados):
     codigo = pedir_codigo("\nIngrese el código de inventario a modificar (formato INV-0000) (o 'volver' para cancelar): ", FORMATO_INVENTARIO)
@@ -832,6 +842,7 @@ def modificar_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, pro
         inv_cants[indice] = nueva_cant
         inv_deps[indice] = nuevo_dep
         print("Registro de inventario actualizado.")
+        return codigo
 
 def listar_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps):
     # Muestra el listado de inventario. El armado del texto (incluido el caso de
@@ -1001,11 +1012,101 @@ def consulta_comparar_depositos(productos, inventario):
     mostrar_conjunto_productos("Productos solo en el depósito " + str(deposito_b) + ":", solo_en_b, productos)
 
 
+
+# ARCHIVO DE HISTORIAL DE MOVIMIENTOS
+# Ruta relativa: el archivo se crea en la carpeta desde donde se ejecuta el programa.
+# No hace falta que exista al arrancar, se crea solo con el primer movimiento registrado.
+
+ARCHIVO_MOVIMIENTOS = "movimientos.txt"
+
+# ARCHIVOS DE TEXTO
+# Historial de movimientos: cada alta, baja o modificación del ABM se anota como una línea
+# en ARCHIVO_MOVIMIENTOS con el formato usuario,accion,entidad,codigo (ej: lzanino,alta,producto,PRD-111).
+
+# Los nombres de usuario y los códigos no tienen comas, por eso la coma sirve como separador.
+# El archivo no tiene que existir para que el programa funcione: se crea con el primer movimiento,
+# y si no se puede abrir se avisa y el programa sigue.
+
+def armar_linea_movimiento(usuario, accion, entidad, codigo):
+    # Arma la línea que se guarda en el archivo, terminada en salto de línea.
+    return usuario + "," + accion + "," + entidad + "," + codigo + "\n"
+
+def interpretar_linea_movimiento(linea):
+    # Convierte una línea del archivo en una tupla (usuario, accion, entidad, codigo).
+    # Si la línea está vacía o incompleta (no tiene exactamente 4 datos), devuelve None.
+    partes = linea.strip().split(",")
+    if len(partes) != 4:
+        return None
+    for parte in partes:
+        if parte == "":
+            return None
+    return (partes[0], partes[1], partes[2], partes[3])
+
+def contar_movimientos(movimientos):
+    # Recibe la lista de tuplas y devuelve un diccionario {accion: cantidad}.
+    cantidades = {}
+    for movimiento in movimientos:
+        accion = movimiento[1]  # la tupla es (usuario, accion, entidad, codigo)
+        if accion in cantidades:
+            cantidades[accion] += 1
+        else:
+            cantidades[accion] = 1
+    return cantidades
+
+def registrar_movimiento(usuario, accion, entidad, codigo):
+    # Agrega una línea al final del archivo. Si no existe, lo crea con "a".
+    # Si no se puede escribir (por ejemplo, por falta de permisos), se avisa y el programa sigue.
+    try:
+        with open(ARCHIVO_MOVIMIENTOS, "a") as archivo:
+            archivo.write(armar_linea_movimiento(usuario, accion, entidad, codigo))
+        return True
+    except OSError:
+        print("No se pudo registrar el movimiento en el archivo.")
+        return False
+
+def leer_movimientos():
+    # Lee el archivo línea por línea y devuelve la lista de movimientos válidos (tuplas).
+    # Las líneas en blanco o corruptas se saltean.
+    movimientos = []
+    try:
+        with open(ARCHIVO_MOVIMIENTOS, "r") as archivo:
+            for linea in archivo:
+                movimiento = interpretar_linea_movimiento(linea)
+                if movimiento is not None:
+                    movimientos.append(movimiento)
+    except FileNotFoundError:
+        return []
+    except (OSError, UnicodeDecodeError):
+        print("No se pudo leer el archivo de movimientos.")
+        return []
+    return movimientos
+
+def consulta_historial_movimientos():
+    movimientos = leer_movimientos()
+    if len(movimientos) == 0:
+        print("Todavía no hay movimientos registrados.")
+        return
+
+    print("\n--- HISTORIAL DE MOVIMIENTOS ---")
+    for i in range(len(movimientos)):
+        usuario, accion, entidad, codigo = movimientos[i]
+        print(str(i + 1) + ". Usuario: " + usuario + " | Acción: " + accion + " | Entidad: " + entidad + " | Código: " + codigo)
+
+    cantidades = contar_movimientos(movimientos)
+    print("\n--- RESUMEN DE MOVIMIENTOS ---")
+    print("Altas: " + str(cantidades.get("alta", 0)))
+    print("Bajas: " + str(cantidades.get("baja", 0)))
+    print("Modificaciones: " + str(cantidades.get("modificacion", 0)))
+
+
 # SUBMENÚS DEL PROGRAMA PRINCIPAL
 # Cada submenú recibe los diccionarios que necesita y saca de ellos sus listas paralelas.
 # Son alias: apuntan a la MISMA lista que guarda el diccionario (no son copias), por eso
 # las altas, bajas y modificaciones que se hacen acá se ven en el resto del sistema.
-def menu_productos(productos, inventario):
+
+# Los submenús del ABM también reciben el usuario que inició sesión: cuando una operación
+# se completa, la anotan en el historial
+def menu_productos(productos, inventario, usuario):
     prod_codigos = productos["codigos"]
     prod_nombres = productos["nombres"]
     prod_precios = productos["precios"]
@@ -1027,11 +1128,17 @@ def menu_productos(productos, inventario):
         opcion_submenu_producto = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 8)
 
         if opcion_submenu_producto == 1:
-            alta_producto(prod_codigos, prod_nombres, prod_precios)
+            codigo = alta_producto(prod_codigos, prod_nombres, prod_precios)
+            if codigo is not None:
+                registrar_movimiento(usuario, "alta", "producto", codigo)
         elif opcion_submenu_producto == 2:
-            baja_producto(prod_codigos, prod_nombres, prod_precios, inv_codigos_prod)
+            codigo = baja_producto(prod_codigos, prod_nombres, prod_precios, inv_codigos_prod)
+            if codigo is not None:
+                registrar_movimiento(usuario, "baja", "producto", codigo)
         elif opcion_submenu_producto == 3:
-            modificar_producto(prod_codigos, prod_nombres, prod_precios)
+            codigo = modificar_producto(prod_codigos, prod_nombres, prod_precios)
+            if codigo is not None:
+                registrar_movimiento(usuario, "modificacion", "producto", codigo)
         elif opcion_submenu_producto == 4:
             ordenar_listas_paralelas([prod_codigos, prod_nombres, prod_precios], 0)
             listar_productos(prod_codigos, prod_nombres, prod_precios)
@@ -1044,7 +1151,7 @@ def menu_productos(productos, inventario):
         elif opcion_submenu_producto == 8:
             mostrar_etiquetas_productos(prod_nombres)
 
-def menu_categorias(categorias, inventario):
+def menu_categorias(categorias, inventario, usuario):
     cat_codigos = categorias["codigos"]
     cat_nombres = categorias["nombres"]
     cat_recargos = categorias["recargos"]
@@ -1063,16 +1170,22 @@ def menu_categorias(categorias, inventario):
         opcion_submenu_categoria = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
 
         if opcion_submenu_categoria == 1:
-            alta_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
+            codigo = alta_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
+            if codigo is not None:
+                registrar_movimiento(usuario, "alta", "categoria", codigo)
         elif opcion_submenu_categoria == 2:
-            baja_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados, inv_codigos_cat)
+            codigo = baja_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados, inv_codigos_cat)
+            if codigo is not None:
+                registrar_movimiento(usuario, "baja", "categoria", codigo)
         elif opcion_submenu_categoria == 3:
-            modificar_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
+            codigo = modificar_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
+            if codigo is not None:
+                registrar_movimiento(usuario, "modificacion", "categoria", codigo)
         elif opcion_submenu_categoria == 4:
             ordenar_listas_paralelas([cat_codigos, cat_nombres, cat_recargos, cat_estados], 1)
             listar_categorias(cat_codigos, cat_nombres, cat_recargos, cat_estados)
 
-def menu_inventario(inventario, productos, categorias):
+def menu_inventario(inventario, productos, categorias, usuario):
     inv_codigos = inventario["codigos"]
     inv_codigos_prod = inventario["codigos_prod"]
     inv_codigos_cat = inventario["codigos_cat"]
@@ -1094,11 +1207,17 @@ def menu_inventario(inventario, productos, categorias):
         opcion_submenu_inventario = solicitar_opcion_menu("\nIngrese una opción válida: ", 0, 4)
 
         if opcion_submenu_inventario == 1:
-            alta_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
+            codigo = alta_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
+            if codigo is not None:
+                registrar_movimiento(usuario, "alta", "inventario", codigo)
         elif opcion_submenu_inventario == 2:
-            baja_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
+            codigo = baja_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
+            if codigo is not None:
+                registrar_movimiento(usuario, "baja", "inventario", codigo)
         elif opcion_submenu_inventario == 3:
-            modificar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
+            codigo = modificar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
+            if codigo is not None:
+                registrar_movimiento(usuario, "modificacion", "inventario", codigo)
         elif opcion_submenu_inventario == 4:
             ordenar_listas_paralelas([inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos], 3)
             listar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
@@ -1120,9 +1239,10 @@ def menu_consultas(productos, categorias, inventario):
         print("(5) Ver valor total de stock por categoría")
         print("(6) Ver productos sin stock registrado")
         print("(7) Comparar productos entre dos depósitos")
+        print("(8) Historial de movimientos")
         print("(0) Volver atrás")
 
-        opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 7)
+        opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 8)
 
         if opcion_submenu_consultas == 1:
             consulta_productos_en_stock(productos, inventario)
@@ -1138,6 +1258,8 @@ def menu_consultas(productos, categorias, inventario):
             consulta_productos_sin_stock(productos, inventario)
         elif opcion_submenu_consultas == 7:
             consulta_comparar_depositos(productos, inventario)
+        elif opcion_submenu_consultas == 8:
+            consulta_historial_movimientos()
 
 
 # PROGRAMA PRINCIPAL (MENÚ)
@@ -1154,7 +1276,8 @@ def main():
     # Ahora se atrapan solo esas dos excepciones (agrupadas en una tupla) y se muestra un mensaje claro.
     # El bloque finally se ejecuta siempre, haya o no excepción, para mostrar el mensaje de salida.
     try:
-        logged_in = iniciar_sesion(usuarios)
+        usuario_actual = iniciar_sesion(usuarios)
+        logged_in = buscar_usuario(usuarios, usuario_actual) if usuario_actual else None
         rol_actual = logged_in["rol"] if logged_in else None
 
         opcion_menu = 1
@@ -1181,11 +1304,11 @@ def main():
                     # si elige quedarse (2), el while vuelve a imprimir el menú principal completo desde el inicio     
 
                 if opcion_menu == 1:
-                    menu_productos(productos, inventario)
+                    menu_productos(productos, inventario, usuario_actual)
                 elif opcion_menu == 2:
-                    menu_categorias(categorias, inventario)
+                    menu_categorias(categorias, inventario, usuario_actual)
                 elif opcion_menu == 3:
-                    menu_inventario(inventario, productos, categorias)
+                    menu_inventario(inventario, productos, categorias, usuario_actual)
                 elif opcion_menu == 4:
                     menu_consultas(productos, categorias, inventario)
                 elif opcion_menu == 5:
