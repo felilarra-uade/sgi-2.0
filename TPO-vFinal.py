@@ -1019,6 +1019,12 @@ def consulta_comparar_depositos(productos, inventario):
 
 ARCHIVO_MOVIMIENTOS = "movimientos.txt"
 
+# ARCHIVO DE HISTORIAL DE STOCK
+# Ruta relativa: el archivo se crea en la carpeta desde donde se ejecuta el programa.
+# No hace falta que exista al arrancar, se crea solo con la primera operación de producto o inventario.
+
+ARCHIVO_HISTORIAL_STOCK = "historial_stock.txt"
+
 # ARCHIVOS DE TEXTO
 # Historial de movimientos: cada alta, baja o modificación del ABM se anota como una línea
 # en ARCHIVO_MOVIMIENTOS con el formato usuario,accion,entidad,codigo (ej: lzanino,alta,producto,PRD-111).
@@ -1098,6 +1104,80 @@ def consulta_historial_movimientos():
     print("Bajas: " + str(cantidades.get("baja", 0)))
     print("Modificaciones: " + str(cantidades.get("modificacion", 0)))
 
+# Historial de stock: cada alta, baja o modificación de un producto o de un registro de inventario
+# agrega al final de ARCHIVO_HISTORIAL_STOCK un bloque con el stock de todos los productos en ese momento.
+
+# Los bloques anteriores no se tocan, asi se puede comparar como fue cambiando el stock.
+# Igual que con los movimientos, el archivo no tiene que existir, si falla se avisa y el programa sigue
+
+def calcular_stock_por_producto(productos, inventario):
+    #Devuelve un diccionario {codigo_producto: unidades_totales}
+    # Arranca cada producto en 0 y le suma las cantidades de sus registros de inventario.
+    stock = {}
+    for codigo in productos["codigos"]:
+        stock[codigo] = 0
+    for i in range(len(inventario["codigos_prod"])):
+        codigo_prod = inventario["codigos_prod"][i]
+        if codigo_prod in stock:
+            stock[codigo_prod] += inventario["cantidades"][i]
+    return stock
+
+def armar_bloque_historial_stock(usuario, accion, entidad, codigo, productos, stock_por_producto):
+    # Arma el bloque que se agrega al archivo: un encabezado con la operación, una línea por
+    #producto con su stock, el total
+    bloque = "=== " + accion + " de " + entidad + " " + codigo + " (usuario: " + usuario + ") ===\n"
+    total = 0
+    for i in range(len(productos["codigos"])):
+        codigo_prod = productos["codigos"][i]
+        unidades = stock_por_producto.get(codigo_prod, 0)
+        bloque += codigo_prod + " - " + productos["nombres"][i] + ": " + str(unidades) + " unidades\n"
+        total += unidades
+    bloque += "Total: " + str(total) + " unidades\n"
+    bloque += "\n"
+    return bloque
+
+def registrar_historial_stock(usuario, accion, entidad, codigo, productos, inventario):
+    # Agrega el bloque al final del archivo con "a" (si no existe, lo crea).
+    # Si no se puede escribir se avisa y el programa sigue: la operación del ABM ya quedó hecha
+    stock_por_producto = calcular_stock_por_producto(productos, inventario)
+    bloque = armar_bloque_historial_stock(usuario, accion, entidad, codigo, productos, stock_por_producto)
+    try:
+        with open(ARCHIVO_HISTORIAL_STOCK, "a") as archivo:
+            archivo.write(bloque)
+    except (OSError, UnicodeEncodeError):
+        print("No se pudo registrar el historial de stock en el archivo.")
+        return False
+    print("Historial de stock actualizado en " + ARCHIVO_HISTORIAL_STOCK)
+    return True
+
+def consulta_historial_stock():
+    # Lee todo el archivo primero y después lo muestra, asi un error de lectura
+    # no deja el listado cortado a la mitad. Un archivo vacío o con solo líneas en blanco
+    # se trata igual que si no existiera.
+    lineas = []
+    try:
+        with open(ARCHIVO_HISTORIAL_STOCK, "r") as archivo:
+            for linea in archivo:
+                lineas.append(linea)
+    except FileNotFoundError:
+        print("Todavía no hay historial de stock registrado.")
+        return
+    except (OSError, UnicodeDecodeError):
+        print("No se pudo leer el archivo de historial de stock.")
+        return
+
+    hay_contenido = False
+    for linea in lineas:
+        if linea.strip() != "":
+            hay_contenido = True
+    if not hay_contenido:
+        print("Todavía no hay historial de stock registrado.")
+        return
+
+    print("\n--- HISTORIAL DE STOCK ---")
+    for linea in lineas:
+        print(linea.rstrip("\n"))
+
 
 # SUBMENÚS DEL PROGRAMA PRINCIPAL
 # Cada submenú recibe los diccionarios que necesita y saca de ellos sus listas paralelas.
@@ -1131,14 +1211,17 @@ def menu_productos(productos, inventario, usuario):
             codigo = alta_producto(prod_codigos, prod_nombres, prod_precios)
             if codigo is not None:
                 registrar_movimiento(usuario, "alta", "producto", codigo)
+                registrar_historial_stock(usuario, "alta", "producto", codigo, productos, inventario)
         elif opcion_submenu_producto == 2:
             codigo = baja_producto(prod_codigos, prod_nombres, prod_precios, inv_codigos_prod)
             if codigo is not None:
                 registrar_movimiento(usuario, "baja", "producto", codigo)
+                registrar_historial_stock(usuario, "baja", "producto", codigo, productos, inventario)
         elif opcion_submenu_producto == 3:
             codigo = modificar_producto(prod_codigos, prod_nombres, prod_precios)
             if codigo is not None:
                 registrar_movimiento(usuario, "modificacion", "producto", codigo)
+                registrar_historial_stock(usuario, "modificacion", "producto", codigo, productos, inventario)
         elif opcion_submenu_producto == 4:
             ordenar_listas_paralelas([prod_codigos, prod_nombres, prod_precios], 0)
             listar_productos(prod_codigos, prod_nombres, prod_precios)
@@ -1210,14 +1293,17 @@ def menu_inventario(inventario, productos, categorias, usuario):
             codigo = alta_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
             if codigo is not None:
                 registrar_movimiento(usuario, "alta", "inventario", codigo)
+                registrar_historial_stock(usuario, "alta", "inventario", codigo, productos, inventario)
         elif opcion_submenu_inventario == 2:
             codigo = baja_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
             if codigo is not None:
                 registrar_movimiento(usuario, "baja", "inventario", codigo)
+                registrar_historial_stock(usuario, "baja", "inventario", codigo, productos, inventario)
         elif opcion_submenu_inventario == 3:
             codigo = modificar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
             if codigo is not None:
                 registrar_movimiento(usuario, "modificacion", "inventario", codigo)
+                registrar_historial_stock(usuario, "modificacion", "inventario", codigo, productos, inventario)
         elif opcion_submenu_inventario == 4:
             ordenar_listas_paralelas([inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos], 3)
             listar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
@@ -1240,9 +1326,10 @@ def menu_consultas(productos, categorias, inventario):
         print("(6) Ver productos sin stock registrado")
         print("(7) Comparar productos entre dos depósitos")
         print("(8) Historial de movimientos")
+        print("(9) Historial de stock")
         print("(0) Volver atrás")
 
-        opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 8)
+        opcion_submenu_consultas = solicitar_opcion_menu("\nIngrese una opcion válida: ", 0, 9)
 
         if opcion_submenu_consultas == 1:
             consulta_productos_en_stock(productos, inventario)
@@ -1260,6 +1347,8 @@ def menu_consultas(productos, categorias, inventario):
             consulta_comparar_depositos(productos, inventario)
         elif opcion_submenu_consultas == 8:
             consulta_historial_movimientos()
+        elif opcion_submenu_consultas == 9:
+            consulta_historial_stock()
 
 
 # PROGRAMA PRINCIPAL (MENÚ)
