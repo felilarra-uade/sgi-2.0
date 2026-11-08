@@ -1,4 +1,5 @@
 import re
+import json
 from functools import reduce
 
 # VALIDACIONES DE INPUT
@@ -1231,7 +1232,86 @@ def consulta_historial_stock():
     for linea in lineas:
         print(linea.rstrip("\n"))
 
+# ARCHIVO JSON DE DATOS (Agustín Poggi - Segunda Parte)
+# Todos los datos del sistema (usuarios, productos, categorías e inventario) se guardan en un archivo JSON
+# para que no se pierdan al cerrar el programa. El diccionario que arma datos_por_defecto() ya tiene
+# forma de JSON (diccionarios con listas de textos y números), así que se guarda entero con json.dump()
+# y se recupera entero con json.load().
+# Ruta relativa: el archivo se crea en la carpeta desde donde se ejecuta el programa.
 
+ARCHIVO_DATOS = "datos_sgi.json"
+
+# Claves que tiene que tener cada entidad dentro del JSON. Se usan tuplas porque son datos fijos
+# del sistema que no se modifican. Los usuarios no están acá porque se guardan con otra forma
+# (un diccionario por usuario) y se controlan aparte en estructura_valida().
+CLAVES_PRODUCTOS = ("codigos", "nombres", "precios")
+CLAVES_CATEGORIAS = ("codigos", "nombres", "recargos", "estados")
+CLAVES_INVENTARIO = ("codigos", "codigos_prod", "codigos_cat", "cantidades", "depositos")
+
+def entidad_valida(entidad, claves):
+    # Controla que la entidad sea un diccionario con todas sus listas paralelas
+    # y que todas tengan el mismo largo (si una lista tiene un dato de menos, al recorrerlas
+    # con el mismo índice el programa se rompería con IndexError).
+    if type(entidad) != dict:
+        return False
+    for clave in claves:
+        if clave not in entidad or type(entidad[clave]) != list:
+            return False
+    largo = len(entidad[claves[0]])
+    for clave in claves:
+        if len(entidad[clave]) != largo:
+            return False
+    return True
+
+def estructura_valida(datos):
+    # Un JSON puede estar bien escrito (json.load no da error) pero no tener los datos que el
+    # sistema necesita, por ejemplo si alguien lo editó a mano y borró una clave.
+    # Esta función controla eso antes de usar los datos, para que el programa no se rompa más adelante.
+    if type(datos) != dict:
+        return False
+    if "usuarios" not in datos or type(datos["usuarios"]) != dict:
+        return False
+    return (entidad_valida(datos.get("productos"), CLAVES_PRODUCTOS)
+            and entidad_valida(datos.get("categorias"), CLAVES_CATEGORIAS)
+            and entidad_valida(datos.get("inventario"), CLAVES_INVENTARIO))
+
+def cargar_datos():
+    # Lee el JSON y devuelve el diccionario con todos los datos.
+    # Si el archivo no existe, no se puede abrir o está dañado, devuelve los datos por defecto:
+    # el programa tiene que arrancar siempre, aunque falle la lectura.
+    try:
+        with open(ARCHIVO_DATOS, "r") as archivo:
+            datos = json.load(archivo)
+    except FileNotFoundError:
+        # Primera ejecución: todavía no se guardó nada. Se crea al guardar por primera vez.
+        print("No se encontró " + ARCHIVO_DATOS + ". Se cargan los datos iniciales.")
+        return datos_por_defecto()
+    except OSError:
+        # El archivo existe pero no se puede abrir (por ejemplo, por falta de permisos).
+        print("No se pudo abrir " + ARCHIVO_DATOS + ". Se cargan los datos iniciales.")
+        return datos_por_defecto()
+    except ValueError:
+        # json.load lanza JSONDecodeError si el texto no es un JSON válido (archivo cortado o editado mal).
+        # JSONDecodeError es un tipo de ValueError, por eso alcanza con atrapar ValueError.
+        print("El archivo " + ARCHIVO_DATOS + " está dañado. Se cargan los datos iniciales.")
+        return datos_por_defecto()
+
+    if not estructura_valida(datos):
+        print("El archivo " + ARCHIVO_DATOS + " no tiene la estructura esperada. Se cargan los datos iniciales.")
+        return datos_por_defecto()
+    return datos
+
+def guardar_datos(datos):
+    # Guarda todo el diccionario en el JSON con "w": se reemplaza el contenido anterior por el actual.
+    # indent=4 deja el archivo ordenado y fácil de leer.
+    # Si no se puede escribir, se avisa y el programa sigue: la operación ya quedó hecha en memoria.
+    try:
+        with open(ARCHIVO_DATOS, "w") as archivo:
+            json.dump(datos, archivo, indent=4)
+        return True
+    except OSError:
+        print("No se pudieron guardar los datos en " + ARCHIVO_DATOS + ".")
+        return False
 # SUBMENÚS DEL PROGRAMA PRINCIPAL
 # Cada submenú recibe los diccionarios que necesita y saca de ellos sus listas paralelas.
 # Son alias: apuntan a la MISMA lista que guarda el diccionario (no son copias), por eso
@@ -1239,7 +1319,7 @@ def consulta_historial_stock():
 
 # Los submenús del ABM también reciben el usuario que inició sesión: cuando una operación
 # se completa, la anotan en el historial
-def menu_productos(productos, inventario, categorias, usuario):
+def menu_productos(productos, inventario, categorias, usuario, datos):
     prod_codigos = productos["codigos"]
     prod_nombres = productos["nombres"]
     prod_precios = productos["precios"]
@@ -1264,16 +1344,19 @@ def menu_productos(productos, inventario, categorias, usuario):
             codigo = alta_producto(prod_codigos, prod_nombres, prod_precios)
             if codigo is not None:
                 registrar_movimiento(usuario, "alta", "producto", codigo)
+                guardar_datos(datos)
                 registrar_historial_stock(usuario, "alta", "producto", codigo, productos, categorias, inventario)
         elif opcion_submenu_producto == 2:
             codigo = baja_producto(prod_codigos, prod_nombres, prod_precios, inv_codigos_prod)
             if codigo is not None:
                 registrar_movimiento(usuario, "baja", "producto", codigo)
+                guardar_datos(datos)
                 registrar_historial_stock(usuario, "baja", "producto", codigo, productos, categorias, inventario)
         elif opcion_submenu_producto == 3:
             codigo = modificar_producto(prod_codigos, prod_nombres, prod_precios)
             if codigo is not None:
                 registrar_movimiento(usuario, "modificacion", "producto", codigo)
+                guardar_datos(datos)
                 registrar_historial_stock(usuario, "modificacion", "producto", codigo, productos, categorias, inventario)
         elif opcion_submenu_producto == 4:
             ordenar_listas_paralelas([prod_codigos, prod_nombres, prod_precios], 0)
@@ -1287,7 +1370,7 @@ def menu_productos(productos, inventario, categorias, usuario):
         elif opcion_submenu_producto == 8:
             mostrar_etiquetas_productos(prod_nombres)
 
-def menu_categorias(categorias, inventario, usuario):
+def menu_categorias(categorias, inventario, usuario, datos):
     cat_codigos = categorias["codigos"]
     cat_nombres = categorias["nombres"]
     cat_recargos = categorias["recargos"]
@@ -1309,19 +1392,22 @@ def menu_categorias(categorias, inventario, usuario):
             codigo = alta_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
             if codigo is not None:
                 registrar_movimiento(usuario, "alta", "categoria", codigo)
+                guardar_datos(datos)
         elif opcion_submenu_categoria == 2:
             codigo = baja_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados, inv_codigos_cat)
             if codigo is not None:
                 registrar_movimiento(usuario, "baja", "categoria", codigo)
+                guardar_datos(datos)
         elif opcion_submenu_categoria == 3:
             codigo = modificar_categoria(cat_codigos, cat_nombres, cat_recargos, cat_estados)
             if codigo is not None:
                 registrar_movimiento(usuario, "modificacion", "categoria", codigo)
+                guardar_datos(datos)
         elif opcion_submenu_categoria == 4:
             ordenar_listas_paralelas([cat_codigos, cat_nombres, cat_recargos, cat_estados], 1)
             listar_categorias(cat_codigos, cat_nombres, cat_recargos, cat_estados)
 
-def menu_inventario(inventario, productos, categorias, usuario):
+def menu_inventario(inventario, productos, categorias, usuario, datos):
     inv_codigos = inventario["codigos"]
     inv_codigos_prod = inventario["codigos_prod"]
     inv_codigos_cat = inventario["codigos_cat"]
@@ -1346,16 +1432,19 @@ def menu_inventario(inventario, productos, categorias, usuario):
             codigo = alta_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
             if codigo is not None:
                 registrar_movimiento(usuario, "alta", "inventario", codigo)
+                guardar_datos(datos)
                 registrar_historial_stock(usuario, "alta", "inventario", codigo, productos, categorias, inventario)
         elif opcion_submenu_inventario == 2:
             codigo = baja_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos)
             if codigo is not None:
                 registrar_movimiento(usuario, "baja", "inventario", codigo)
+                guardar_datos(datos)
                 registrar_historial_stock(usuario, "baja", "inventario", codigo, productos, categorias, inventario)
         elif opcion_submenu_inventario == 3:
             codigo = modificar_inventario(inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos, prod_codigos, cat_codigos, cat_estados)
             if codigo is not None:
                 registrar_movimiento(usuario, "modificacion", "inventario", codigo)
+                guardar_datos(datos)
                 registrar_historial_stock(usuario, "modificacion", "inventario", codigo, productos, categorias, inventario)
         elif opcion_submenu_inventario == 4:
             ordenar_listas_paralelas([inv_codigos, inv_codigos_prod, inv_codigos_cat, inv_cantidades, inv_depositos], 3)
@@ -1406,7 +1495,9 @@ def menu_consultas(productos, categorias, inventario):
 
 # PROGRAMA PRINCIPAL (MENÚ)
 def main():
-    datos = datos_por_defecto()
+    # La carga del JSON está acá adentro (y no suelta al principio del archivo) para que no se
+    # ejecute cuando pruebas_sgi.py hace "import sgi".
+    datos = cargar_datos()
     usuarios = datos["usuarios"]
     productos = datos["productos"]
     categorias = datos["categorias"]
@@ -1419,6 +1510,8 @@ def main():
     # El bloque finally se ejecuta siempre, haya o no excepción, para mostrar el mensaje de salida.
     try:
         usuario_actual = iniciar_sesion(usuarios)
+        # El login puede cambiar intentos fallidos y bloqueos: se guarda para que no se pierdan.
+        guardar_datos(datos)
         logged_in = buscar_usuario(usuarios, usuario_actual) if usuario_actual else None
         rol_actual = logged_in["rol"] if logged_in else None
 
@@ -1446,18 +1539,21 @@ def main():
                     # si elige quedarse (2), el while vuelve a imprimir el menú principal completo desde el inicio     
 
                 if opcion_menu == 1:
-                    menu_productos(productos, inventario, categorias, usuario_actual)
+                    menu_productos(productos, inventario, categorias, usuario_actual, datos)
                 elif opcion_menu == 2:
-                    menu_categorias(categorias, inventario, usuario_actual)
+                    menu_categorias(categorias, inventario, usuario_actual, datos)
                 elif opcion_menu == 3:
-                    menu_inventario(inventario, productos, categorias, usuario_actual)
+                    menu_inventario(inventario, productos, categorias, usuario_actual, datos)
                 elif opcion_menu == 4:
                     menu_consultas(productos, categorias, inventario)
                 elif opcion_menu == 5:
                     administrar_usuarios_bloqueados(usuarios)
+                    guardar_datos(datos)
     except (KeyboardInterrupt, EOFError):
         print("\n\nEjecución interrumpida por el usuario.")
     finally:
+        # Se guarda al salir, también si el usuario cortó con Ctrl+C: finally se ejecuta siempre.
+        guardar_datos(datos)
         print("\nSaliendo del sistema. ¡Gracias por usarlo!")
 
 if __name__ == "__main__":
