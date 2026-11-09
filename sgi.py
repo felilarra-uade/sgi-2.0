@@ -322,6 +322,9 @@ def iniciar_sesion(usuarios):
             # No hace falta validar el usuario de nuevo acá: si llegamos hasta este
             # punto, ya sabemos que existe (se descartó en el primer if de arriba)
             print("Inicio de sesión exitoso. Bienvenido al sistema de inventario!")
+            # Se reinicia el contador: el bloqueo es por 3 intentos fallidos seguidos.
+            # Como los usuarios se guardan en el JSON, sin esto los errores se acumulaban entre sesiones.
+            user_data["intentos_fallidos"] = 0
             logged_in = True
 
     if not logged_in:
@@ -1242,11 +1245,12 @@ def consulta_historial_stock():
 ARCHIVO_DATOS = "datos_sgi.json"
 
 # Claves que tiene que tener cada entidad dentro del JSON. Se usan tuplas porque son datos fijos
-# del sistema que no se modifican. Los usuarios no están acá porque se guardan con otra forma
-# (un diccionario por usuario) y se controlan aparte en estructura_valida().
+# del sistema que no se modifican. Los usuarios se guardan con otra forma (un diccionario por
+# usuario), por eso sus claves se controlan aparte en usuarios_validos().
 CLAVES_PRODUCTOS = ("codigos", "nombres", "precios")
 CLAVES_CATEGORIAS = ("codigos", "nombres", "recargos", "estados")
 CLAVES_INVENTARIO = ("codigos", "codigos_prod", "codigos_cat", "cantidades", "depositos")
+CLAVES_USUARIO = ("contrasena", "rol", "intentos_fallidos", "bloqueado")
 
 def entidad_valida(entidad, claves):
     # Controla que la entidad sea un diccionario con todas sus listas paralelas
@@ -1263,13 +1267,26 @@ def entidad_valida(entidad, claves):
             return False
     return True
 
+def usuarios_validos(usuarios):
+    # Controla que cada usuario sea un diccionario con todos sus datos.
+    # Si a un usuario le falta alguno (por ejemplo "bloqueado"), el login se rompería con KeyError.
+    if type(usuarios) != dict:
+        return False
+    for datos_usuario in usuarios.values():
+        if type(datos_usuario) != dict:
+            return False
+        for clave in CLAVES_USUARIO:
+            if clave not in datos_usuario:
+                return False
+    return True
+
 def estructura_valida(datos):
     # Un JSON puede estar bien escrito (json.load no da error) pero no tener los datos que el
     # sistema necesita, por ejemplo si alguien lo editó a mano y borró una clave.
     # Esta función controla eso antes de usar los datos, para que el programa no se rompa más adelante.
     if type(datos) != dict:
         return False
-    if "usuarios" not in datos or type(datos["usuarios"]) != dict:
+    if not usuarios_validos(datos.get("usuarios")):
         return False
     return (entidad_valida(datos.get("productos"), CLAVES_PRODUCTOS)
             and entidad_valida(datos.get("categorias"), CLAVES_CATEGORIAS)
