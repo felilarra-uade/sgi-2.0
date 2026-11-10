@@ -1,0 +1,7 @@
+lzanino,alta,producto,PRD-111
+lzanino,modificacion,producto,PRD-111
+lzanino,alta,categoria,CAT-11
+lzanino,alta,inventario,INV-1011
+lzanino,modificacion,inventario,INV-1005
+lzanino,baja,inventario,INV-1010
+lzanino,baja,producto,PRD-110

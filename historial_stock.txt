@@ -1,0 +1,113 @@
+OPERACION: Alta de producto PRD-111 (usuario: lzanino)
+
+STOCK TOTAL LUEGO DE LA OPERACION:
+Producto | Nombre               | Unidades | Precio unit. | Recargo | Total sin recargo | Total con recargo
+PRD-101  | Cuaderno             |       50 |      1500.00 |  15.00% |          75000.00 |          86250.00
+PRD-102  | Lapicera             |      200 |       200.00 |  10.00% |          40000.00 |          44000.00
+PRD-103  | Goma                 |      100 |       150.00 |  20.00% |          15000.00 |          18000.00
+PRD-104  | Carpeta              |       30 |      2500.00 |  15.00% |          75000.00 |          86250.00
+PRD-105  | Marcador             |      150 |       800.00 |  30.00% |         120000.00 |         156000.00
+PRD-106  | Tijera               |       80 |      1200.00 |  20.00% |          96000.00 |         115200.00
+PRD-107  | Regla                |       45 |       300.00 |  20.00% |          13500.00 |          16200.00
+PRD-108  | Corrector            |      120 |       600.00 |  20.00% |          72000.00 |          86400.00
+PRD-109  | Mochila              |       90 |     15000.00 |  35.00% |        1350000.00 |        1822500.00
+PRD-110  | Cartuchera           |       15 |      3500.00 |  20.00% |          52500.00 |          63000.00
+PRD-111  | Resaltador           |        0 |       950.00 |       - |              0.00 |              0.00
+Total: 880 unidades
+Total sin recargo: $1909000.00
+Total con recargo: $2493800.00
+
+OPERACION: Modificacion de producto PRD-111 (usuario: lzanino)
+
+STOCK TOTAL LUEGO DE LA OPERACION:
+Producto | Nombre               | Unidades | Precio unit. | Recargo | Total sin recargo | Total con recargo
+PRD-101  | Cuaderno             |       50 |      1500.00 |  15.00% |          75000.00 |          86250.00
+PRD-102  | Lapicera             |      200 |       200.00 |  10.00% |          40000.00 |          44000.00
+PRD-103  | Goma                 |      100 |       150.00 |  20.00% |          15000.00 |          18000.00
+PRD-104  | Carpeta              |       30 |      2500.00 |  15.00% |          75000.00 |          86250.00
+PRD-105  | Marcador             |      150 |       800.00 |  30.00% |         120000.00 |         156000.00
+PRD-106  | Tijera               |       80 |      1200.00 |  20.00% |          96000.00 |         115200.00
+PRD-107  | Regla                |       45 |       300.00 |  20.00% |          13500.00 |          16200.00
+PRD-108  | Corrector            |      120 |       600.00 |  20.00% |          72000.00 |          86400.00
+PRD-109  | Mochila              |       90 |     15000.00 |  35.00% |        1350000.00 |        1822500.00
+PRD-110  | Cartuchera           |       15 |      3500.00 |  20.00% |          52500.00 |          63000.00
+PRD-111  | Resaltador Fluor     |        0 |      1100.00 |       - |              0.00 |              0.00
+Total: 880 unidades
+Total sin recargo: $1909000.00
+Total con recargo: $2493800.00
+
+OPERACION: Alta de inventario INV-1011 (usuario: lzanino)
+
+STOCK TOTAL LUEGO DE LA OPERACION:
+Producto | Nombre               | Unidades | Precio unit. | Recargo | Total sin recargo | Total con recargo
+PRD-101  | Cuaderno             |       50 |      1500.00 |  15.00% |          75000.00 |          86250.00
+PRD-102  | Lapicera             |      200 |       200.00 |  10.00% |          40000.00 |          44000.00
+PRD-103  | Goma                 |      100 |       150.00 |  20.00% |          15000.00 |          18000.00
+PRD-104  | Carpeta              |       30 |      2500.00 |  15.00% |          75000.00 |          86250.00
+PRD-105  | Marcador             |      150 |       800.00 |  30.00% |         120000.00 |         156000.00
+PRD-106  | Tijera               |       80 |      1200.00 |  20.00% |          96000.00 |         115200.00
+PRD-107  | Regla                |       45 |       300.00 |  20.00% |          13500.00 |          16200.00
+PRD-108  | Corrector            |      120 |       600.00 |  20.00% |          72000.00 |          86400.00
+PRD-109  | Mochila              |       90 |     15000.00 |  35.00% |        1350000.00 |        1822500.00
+PRD-110  | Cartuchera           |       15 |      3500.00 |  20.00% |          52500.00 |          63000.00
+PRD-111  | Resaltador Fluor     |       60 |      1100.00 |  10.00% |          66000.00 |          72600.00
+Total: 940 unidades
+Total sin recargo: $1975000.00
+Total con recargo: $2566400.00
+
+OPERACION: Modificacion de inventario INV-1005 (usuario: lzanino)
+
+STOCK TOTAL LUEGO DE LA OPERACION:
+Producto | Nombre               | Unidades | Precio unit. | Recargo | Total sin recargo | Total con recargo
+PRD-101  | Cuaderno             |       50 |      1500.00 |  15.00% |          75000.00 |          86250.00
+PRD-102  | Lapicera             |      200 |       200.00 |  10.00% |          40000.00 |          44000.00
+PRD-103  | Goma                 |      100 |       150.00 |  20.00% |          15000.00 |          18000.00
+PRD-104  | Carpeta              |       30 |      2500.00 |  15.00% |          75000.00 |          86250.00
+PRD-105  | Marcador             |      180 |       800.00 |  30.00% |         144000.00 |         187200.00
+PRD-106  | Tijera               |       80 |      1200.00 |  20.00% |          96000.00 |         115200.00
+PRD-107  | Regla                |       45 |       300.00 |  20.00% |          13500.00 |          16200.00
+PRD-108  | Corrector            |      120 |       600.00 |  20.00% |          72000.00 |          86400.00
+PRD-109  | Mochila              |       90 |     15000.00 |  35.00% |        1350000.00 |        1822500.00
+PRD-110  | Cartuchera           |       15 |      3500.00 |  20.00% |          52500.00 |          63000.00
+PRD-111  | Resaltador Fluor     |       60 |      1100.00 |  10.00% |          66000.00 |          72600.00
+Total: 970 unidades
+Total sin recargo: $1999000.00
+Total con recargo: $2597600.00
+
+OPERACION: Baja de inventario INV-1010 (usuario: lzanino)
+
+STOCK TOTAL LUEGO DE LA OPERACION:
+Producto | Nombre               | Unidades | Precio unit. | Recargo | Total sin recargo | Total con recargo
+PRD-101  | Cuaderno             |       50 |      1500.00 |  15.00% |          75000.00 |          86250.00
+PRD-102  | Lapicera             |      200 |       200.00 |  10.00% |          40000.00 |          44000.00
+PRD-103  | Goma                 |      100 |       150.00 |  20.00% |          15000.00 |          18000.00
+PRD-104  | Carpeta              |       30 |      2500.00 |  15.00% |          75000.00 |          86250.00
+PRD-105  | Marcador             |      180 |       800.00 |  30.00% |         144000.00 |         187200.00
+PRD-106  | Tijera               |       80 |      1200.00 |  20.00% |          96000.00 |         115200.00
+PRD-107  | Regla                |       45 |       300.00 |  20.00% |          13500.00 |          16200.00
+PRD-108  | Corrector            |      120 |       600.00 |  20.00% |          72000.00 |          86400.00
+PRD-109  | Mochila              |       90 |     15000.00 |  35.00% |        1350000.00 |        1822500.00
+PRD-110  | Cartuchera           |        0 |      3500.00 |       - |              0.00 |              0.00
+PRD-111  | Resaltador Fluor     |       60 |      1100.00 |  10.00% |          66000.00 |          72600.00
+Total: 955 unidades
+Total sin recargo: $1946500.00
+Total con recargo: $2534600.00
+
+OPERACION: Baja de producto PRD-110 (usuario: lzanino)
+
+STOCK TOTAL LUEGO DE LA OPERACION:
+Producto | Nombre               | Unidades | Precio unit. | Recargo | Total sin recargo | Total con recargo
+PRD-101  | Cuaderno             |       50 |      1500.00 |  15.00% |          75000.00 |          86250.00
+PRD-102  | Lapicera             |      200 |       200.00 |  10.00% |          40000.00 |          44000.00
+PRD-103  | Goma                 |      100 |       150.00 |  20.00% |          15000.00 |          18000.00
+PRD-104  | Carpeta              |       30 |      2500.00 |  15.00% |          75000.00 |          86250.00
+PRD-105  | Marcador             |      180 |       800.00 |  30.00% |         144000.00 |         187200.00
+PRD-106  | Tijera               |       80 |      1200.00 |  20.00% |          96000.00 |         115200.00
+PRD-107  | Regla                |       45 |       300.00 |  20.00% |          13500.00 |          16200.00
+PRD-108  | Corrector            |      120 |       600.00 |  20.00% |          72000.00 |          86400.00
+PRD-109  | Mochila              |       90 |     15000.00 |  35.00% |        1350000.00 |        1822500.00
+PRD-111  | Resaltador Fluor     |       60 |      1100.00 |  10.00% |          66000.00 |          72600.00
+Total: 955 unidades
+Total sin recargo: $1946500.00
+Total con recargo: $2534600.00
+

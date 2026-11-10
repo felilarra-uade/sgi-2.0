@@ -1,0 +1,170 @@
+{
+    "usuarios": {
+        "admin": {
+            "contrasena": "inventario2026",
+            "rol": "admin",
+            "intentos_fallidos": 0,
+            "bloqueado": false
+        },
+        "lzanino": {
+            "contrasena": "clave123",
+            "rol": "usuario",
+            "intentos_fallidos": 0,
+            "bloqueado": false
+        }
+    },
+    "productos": {
+        "codigos": [
+            "PRD-101",
+            "PRD-102",
+            "PRD-103",
+            "PRD-104",
+            "PRD-105",
+            "PRD-106",
+            "PRD-107",
+            "PRD-108",
+            "PRD-109",
+            "PRD-111"
+        ],
+        "nombres": [
+            "Cuaderno",
+            "Lapicera",
+            "Goma",
+            "Carpeta",
+            "Marcador",
+            "Tijera",
+            "Regla",
+            "Corrector",
+            "Mochila",
+            "Resaltador Fluor"
+        ],
+        "precios": [
+            1500.0,
+            200.0,
+            150.0,
+            2500.0,
+            800.0,
+            1200.0,
+            300.0,
+            600.0,
+            15000.0,
+            1100.0
+        ]
+    },
+    "categorias": {
+        "codigos": [
+            "CAT-01",
+            "CAT-02",
+            "CAT-03",
+            "CAT-04",
+            "CAT-05",
+            "CAT-06",
+            "CAT-07",
+            "CAT-08",
+            "CAT-09",
+            "CAT-10",
+            "CAT-11"
+        ],
+        "nombres": [
+            "Papeleria",
+            "Escritura",
+            "Escolares",
+            "Oficina",
+            "Arte",
+            "Mochilas",
+            "Tecnologia",
+            "Libros",
+            "Regalos",
+            "Varios",
+            "Arte y Dibujo"
+        ],
+        "recargos": [
+            15.0,
+            10.0,
+            20.0,
+            25.0,
+            30.0,
+            35.0,
+            40.0,
+            5.0,
+            50.0,
+            10.0,
+            12.5
+        ],
+        "estados": [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1
+        ]
+    },
+    "inventario": {
+        "codigos": [
+            "INV-1001",
+            "INV-1002",
+            "INV-1003",
+            "INV-1004",
+            "INV-1005",
+            "INV-1006",
+            "INV-1007",
+            "INV-1008",
+            "INV-1009",
+            "INV-1011"
+        ],
+        "codigos_prod": [
+            "PRD-101",
+            "PRD-102",
+            "PRD-103",
+            "PRD-104",
+            "PRD-105",
+            "PRD-106",
+            "PRD-107",
+            "PRD-108",
+            "PRD-109",
+            "PRD-111"
+        ],
+        "codigos_cat": [
+            "CAT-01",
+            "CAT-02",
+            "CAT-03",
+            "CAT-01",
+            "CAT-05",
+            "CAT-03",
+            "CAT-03",
+            "CAT-03",
+            "CAT-06",
+            "CAT-02"
+        ],
+        "cantidades": [
+            50,
+            200,
+            100,
+            30,
+            180,
+            80,
+            45,
+            120,
+            90,
+            60
+        ],
+        "depositos": [
+            1,
+            1,
+            2,
+            1,
+            3,
+            2,
+            1,
+            2,
+            1,
+            2
+        ]
+    }
+}
