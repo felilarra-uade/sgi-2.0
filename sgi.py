@@ -5,12 +5,11 @@ from functools import reduce
 # VALIDACIONES DE INPUT
 # MANEJO DE EXCEPCIONES (Agustín Poggi - Segunda Parte)
 # Cada dato numérico se valida en dos pasos:
-#   1) Una función "convertir_..." que recibe el texto, intenta convertirlo y, si el dato no sirve,
-#      lanza (raise) un ValueError con un mensaje claro para el usuario. No usa input() ni print().
-#   2) Una función "pedir_..." que le pide el dato al usuario, llama a la función de conversión dentro
-#      de un try y, si se produce el ValueError, lo atrapa (except) y muestra el mensaje sin cortar el programa.
-# Antes se usaba es_entero()/es_float() con un "except:" general, que atrapaba cualquier error sin distinguirlo.
-# Ahora solo se atrapa ValueError, que es el error que corresponde a un dato con formato o valor incorrecto.
+#   1) "convertir_..." recibe el texto y lo convierte. Si el dato no sirve, lanza (raise) un ValueError
+#      con el mensaje para el usuario. No usa input() ni print().
+#   2) "pedir_..." pide el dato, llama a la conversión dentro de un try y, si salta el ValueError,
+#      lo atrapa (except), muestra el mensaje y vuelve a pedir el dato.
+# Solo se atrapa ValueError, que es el error de un dato mal ingresado.
 
 def convertir_opcion(texto, min_opcion, max_opcion):
     # Convierte la opción ingresada a entero y controla que esté dentro del rango del menú.
@@ -43,12 +42,10 @@ def convertir_float_positivo(texto):
         valor = float(texto)
     except ValueError:
         raise ValueError("Debe ingresar un número. Use punto para los decimales (ej: 1500.50).")
-    # float() acepta los textos "nan" (Not a Number) e "inf" (infinito)
-    # sin dar error, por eso un precio "nan" se guardaba como válido. Hay que rechazarlos a mano con raise.
-    # Además, "nan <= 0" da False, por lo que la validación de mayor a 0 no alcanzaba para detectarlo.
-    if valor != valor:  # NaN es el único valor que no es igual a sí mismo
+    # float() acepta "nan" e "inf" sin dar error, así que hay que rechazarlos a mano.
+    if valor != valor:  # nan no es igual a sí mismo, así se lo detecta
         raise ValueError("'nan' no es un número válido.")
-    if valor == float("inf"):  # "inf" o números enormes como "1e999" se convierten en infinito
+    if valor == float("inf"):  # "inf" o números enormes como "1e999"
         raise ValueError("El número ingresado no es válido (es infinito o demasiado grande).")
     if valor <= 0:  # también descarta "-inf"
         raise ValueError("El número debe ser mayor a 0.")
@@ -99,7 +96,7 @@ def pedir_float(mensaje):
                 print("Error:", error)
     return valor
 
-# Validación de nombres con expresión regulares.
+# Validación de nombres con expresiones regulares.
 # Patrón: solo letras (incluye tildes y ñ) y espacios.
 PATRON_NOMBRE = r"^[A-Za-zÁÉÍÓÚÜáéíóúüÑñ ]+$"
 
@@ -120,7 +117,7 @@ def pedir_texto(mensaje):
         return None
     return dato.strip()
 
-# Validación de códigos con expresión regulares.
+# Validación de códigos con expresiones regulares.
 # Cada entidad del sistema tiene un código con formato alfanumérico fijo:
 # Productos: PRD-NNN
 # Categorías: CAT-NN
@@ -131,9 +128,8 @@ def es_codigo_valido(dato, prefijo, cant_digitos):
     return re.match(patron, dato) is not None
 
 # TUPLAS DE FORMATO DE CÓDIGO (Felipe Larrañaga - Segunda Parte)
-# Cada formato es una tupla (prefijo, cantidad de dígitos). Se usa tupla porque son datos fijos del
-# sistema que van siempre juntos y no deben modificarse durante la ejecución. Antes estos valores
-# estaban repetidos "a mano" en cada llamada a pedir_codigo (ej: "PRD", 3); ahora se definen una sola vez.
+# Cada formato es una tupla (prefijo, cantidad de dígitos). Se usa tupla porque son datos fijos
+# que van siempre juntos y no se modifican. Se definen una sola vez y se usan en todos los pedir_codigo.
 FORMATO_PRODUCTO = ("PRD", 3)
 FORMATO_CATEGORIA = ("CAT", 2)
 FORMATO_INVENTARIO = ("INV", 4)
@@ -141,7 +137,7 @@ FORMATO_INVENTARIO = ("INV", 4)
 def pedir_codigo(mensaje, formato):
     # Desempaquetado de la tupla: el primer elemento es el prefijo y el segundo la cantidad de dígitos.
     prefijo, cant_digitos = formato
-# .strip() usado para descartar espacios de más.
+    # .strip() descarta los espacios de más.
     # Si el usuario escribe 'volver', se corta el while y se devuelve None para cancelar la operación.
     dato = input(mensaje).strip()
     while dato.lower() != "volver" and not es_codigo_valido(dato, prefijo, cant_digitos):
@@ -246,8 +242,8 @@ def datos_por_defecto():
         "lzanino": {"contrasena": "clave123", "rol": "usuario", "intentos_fallidos": 0, "bloqueado": False},
     }
 
-    #  DATOS HARDCODEADOS (LISTAS PARALELAS)
-    # Los códigos ahora tienen formato alfanumérico validable por RE:
+    # DATOS HARDCODEADOS (LISTAS PARALELAS)
+    # Los códigos tienen formato alfanumérico validable con regex:
     # PRD-NNN (productos), CAT-NN (categorías), INV-NNNN (inventario).
     prod_codigos = ["PRD-101", "PRD-102", "PRD-103", "PRD-104", "PRD-105", "PRD-106", "PRD-107", "PRD-108", "PRD-109", "PRD-110"]
     prod_nombres = ["Cuaderno", "Lapicera", "Goma", "Carpeta", "Marcador", "Tijera", "Regla", "Corrector", "Mochila", "Cartuchera"]
@@ -308,9 +304,6 @@ def iniciar_sesion(usuarios):
  
         user_data = buscar_usuario(usuarios, input_user)
 
-        # A partir de acá, la cadena de elif es excluyente: si user_data es None,
-        # ninguno de los elif siguientes se ejecuta. Por eso, para cuando llegamos
-        # al último elif, ya está garantizado que el usuario existe.
         if user_data == None:
             print("El usuario no existe. Intente nuevamente.\n")
             intentos += 1
@@ -327,11 +320,9 @@ def iniciar_sesion(usuarios):
                 user_data["bloqueado"] = True
                 print("!!!!!!!! El usuario ha sido bloqueado por 3 intentos fallidos. !!!!!!!! \n")
         elif user_data["contrasena"] == input_password:
-            # No hace falta validar el usuario de nuevo acá: si llegamos hasta este
-            # punto, ya sabemos que existe (se descartó en el primer if de arriba)
             print("Inicio de sesión exitoso. Bienvenido al sistema de inventario!")
-            # Se reinicia el contador: el bloqueo es por 3 intentos fallidos seguidos.
-            # Como los usuarios se guardan en el JSON, sin esto los errores se acumulaban entre sesiones.
+            # Se reinicia el contador: el bloqueo es por 3 intentos fallidos seguidos,
+            # y los intentos quedan guardados en el JSON de una ejecución a otra.
             user_data["intentos_fallidos"] = 0
             logged_in = True
 
@@ -343,6 +334,8 @@ def iniciar_sesion(usuarios):
     return input_user if logged_in else None
 
 def listar_usuarios_bloqueados(usuarios):
+    # Muestra los usuarios bloqueados con su rol y sus intentos fallidos.
+    # Devuelve True si encontró alguno, así el menú sabe si tiene sentido pedir uno para desbloquear.
     encontrado = False;
 
     print("\n --- USUARIOS BLOQUEADOS ---")
@@ -355,6 +348,8 @@ def listar_usuarios_bloqueados(usuarios):
     return encontrado
 
 def desbloquear_usuario(usuarios, nombre_usuario):
+    # Desbloquea al usuario y le reinicia los intentos fallidos.
+    # Si no existe o no estaba bloqueado, solo lo avisa.
     user_data = buscar_usuario(usuarios, nombre_usuario)
 
     if user_data is None:
@@ -432,6 +427,8 @@ def baja_producto(codigos, nombres, precios, inv_prods):
         return codigo
 
 def modificar_producto(codigos, nombres, precios):
+    # Modifica el nombre y el precio de un producto existente.
+    # Devuelve el código si se modificó, para registrarlo en el historial.
     codigo = pedir_codigo("\nIngrese el código del producto a modificar (formato PRD-000) (o 'volver' para cancelar): ", FORMATO_PRODUCTO)
     if codigo is None:
         print("Operación cancelada.")
@@ -445,6 +442,7 @@ def modificar_producto(codigos, nombres, precios):
         if nuevo_nombre is None:
             print("Operación cancelada.")
             return
+        # Se ignora el propio producto, así puede conservar su mismo nombre
         if nombre_duplicado_excluyendo(nombres, nuevo_nombre, indice):
             print("Error: Ya existe otro producto con un nombre igual o muy similar.")
             return
@@ -458,9 +456,8 @@ def modificar_producto(codigos, nombres, precios):
         return codigo
 
 def listar_productos(codigos, nombres, precios):
-    # Muestra el listado de productos. El armado del texto 
-    # ahora lo hace generar_reporte_productos(), que usa reduce
-    # para combinar todas las líneas en un único string antes de imprimirlas.
+    # Muestra el listado de productos. El texto lo arma generar_reporte_productos(),
+    # que usa reduce para juntar todas las líneas en un único string.
     print(generar_reporte_productos(codigos, nombres, precios))
 
 def generar_reporte_productos(codigos, nombres, precios):
@@ -486,7 +483,7 @@ def armar_registro_producto(codigos, nombres, precios, indice):
 
 def mostrar_registro_producto(registro):
     # Desempaquetamos la tupla en tres variables para mostrar cada dato.
-    # Reemplaza los tres print() que antes estaban repetidos en ambas búsquedas.
+    # La usan las dos búsquedas (secuencial y binaria).
     codigo, nombre, precio = registro
     print("Código:", codigo)
     print("Nombre:", nombre)
@@ -615,19 +612,16 @@ def consulta_productos_en_stock(productos, inventario):
     prod_nombres = productos["nombres"]  
     inv_prods = inventario["codigos_prod"]     
     inv_cants = inventario["cantidades"]      
-    print("\n--- PRODUCTOS EN STOCK ---")  # Encabezado del reporte
-    for p in range(len(prod_codigos)):  # Recorremos cada producto uno por uno, usando su índice p
-        codigo_actual = prod_codigos[p]  # Guardamos el código del producto actual para no repetir el acceso
+    print("\n--- PRODUCTOS EN STOCK ---")
+    for p in range(len(prod_codigos)):
+        codigo_actual = prod_codigos[p]
+        # filter: índices del inventario que corresponden a este producto
         indices = list(filter(lambda i: inv_prods[i] == codigo_actual, range(len(inv_prods))))
-        # ↑ FILTER: recorremos todos los índices posibles del inventario y nos quedamos
-        # solo con los índices i donde el producto de esa fila coincide con codigo_actual
+        # map: cantidades de esos registros
         cantidades = list(map(lambda i: inv_cants[i], indices))
-        # ↑ MAP: transformamos la lista de índices filtrados en la lista de cantidades
-        # reales, yendo a buscar inv_cants[i] para cada índice que sobrevivió al filtro
+        # reduce: suma de las cantidades, arrancando en 0
         total = reduce(lambda acumulado, actual: acumulado + actual, cantidades, 0)
-        # ↑ REDUCE: recorremos la lista de cantidades sumándolas de a una, empezando
-        # el acumulador en 0, hasta quedarnos con un único número final
-        print("Producto:", prod_nombres[p], "- Unidades en stock:", total)  # Mostramos el resultado de este producto
+        print("Producto:", prod_nombres[p], "- Unidades en stock:", total)
 
 
 # MÓDULO CATEGORÍAS
@@ -684,6 +678,8 @@ def baja_categoria(codigos, nombres, recargos, estados, inv_cats):
         return codigo
 
 def modificar_categoria(codigos, nombres, recargos, estados):
+    # Modifica nombre, recargo y estado de una categoría existente.
+    # Devuelve el código si se modificó, para registrarlo en el historial.
     codigo = pedir_codigo("\nIngrese el código de la categoría a modificar (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)
     if codigo is None:
         print("Operación cancelada.")
@@ -697,6 +693,7 @@ def modificar_categoria(codigos, nombres, recargos, estados):
         if nuevo_nombre is None:
             print("Operación cancelada.")
             return
+        # Se ignora la propia categoría, así puede conservar su mismo nombre
         if nombre_duplicado_excluyendo(nombres, nuevo_nombre, indice):
             print("Error: Ya existe otra categoría con un nombre igual o muy similar.")
             return
@@ -712,9 +709,8 @@ def modificar_categoria(codigos, nombres, recargos, estados):
         return codigo
 
 def listar_categorias(codigos, nombres, recargos, estados):
-    # Muestra el listado de categorías. El que se encarga de armar el texto es la nueva funcion 
-    # generar_reporte_categoria(), la cual usa 'reduce' para
-    # combinar todas las líneas en un único string antes de imprimirlas
+    # Muestra el listado de categorías. El texto lo arma generar_reporte_categoria(),
+    # que usa reduce para juntar todas las líneas en un único string.
     print(generar_reporte_categoria(codigos, nombres, recargos, estados))
 
 # OPERACIÓN DE AGREGACIÓN CON REDUCE (Lautaro Zanino)
@@ -743,24 +739,25 @@ def consulta_por_categoria(categoria, inventario):
     inv_cants = inventario["cantidades"]     
     inv_deps = inventario["depositos"]      
 
-    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)  # Pedimos y validamos el formato del código
-    if cat_buscada is None:  # pedir_codigo devuelve None si el usuario escribió 'volver'
+    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)
+    if cat_buscada is None:  # el usuario escribió 'volver'
         return
 
-    indice_cat = buscar_indice(cat_codigos, cat_buscada)  # Buscamos si la categoría existe realmente en el sistema
-    if indice_cat == -1:  # Si no la encontramos entre las categorías cargadas
-        print("Error: la categoría no existe.")  # Avisamos que el código no corresponde a ninguna categoría real
-        return  # Cortamos la función acá, no tiene sentido seguir buscando stock de algo que no existe
-    nombre_cat = cat_nombres[indice_cat]  # Guardamos el nombre de la categoría para mostrarlo en los mensajes
+    # Se controla que la categoría exista, para poder mostrar su nombre
+    indice_cat = buscar_indice(cat_codigos, cat_buscada)
+    if indice_cat == -1:
+        print("Error: la categoría no existe.")
+        return
+    nombre_cat = cat_nombres[indice_cat]
 
+    # filter: índices del inventario que son de esta categoría
     indices = list(filter(lambda i: inv_cats[i] == cat_buscada, range(len(inv_cods))))
-    # ↑ FILTER con UNA sola condición: nos quedamos con los índices donde la categoría de esa fila coincide
 
-    if not indices:  # Si la categoría existe, pero no tiene ningún registro de stock asociado
-        print(f"No hay stock registrado para la categoría {cat_buscada} ({nombre_cat}).")  # Avisamos, ahora aclarando el nombre
-    else:  # Si encontramos al menos una fila con esa categoría
-        print(f"\n--- STOCK DE LA CATEGORÍA {cat_buscada} - {nombre_cat} ---")  # Encabezado con código Y nombre de la categoría
-        for i in indices:  # Recorremos los índices filtrados
+    if not indices:
+        print(f"No hay stock registrado para la categoría {cat_buscada} ({nombre_cat}).")
+    else:
+        print(f"\n--- STOCK DE LA CATEGORÍA {cat_buscada} - {nombre_cat} ---")
+        for i in indices:
             print("Cód Inv:", inv_cods[i], "| Producto:", inv_prods[i], "| Cantidad:", inv_cants[i], "| Depósito:", inv_deps[i])
 
 
@@ -777,6 +774,9 @@ def buscar_categoria_en_conflicto(inv_prods, inv_cats, cod_prod, cod_cat, indice
     return None
 
 def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_codigos, cat_codigos, cat_estados):
+    # Agrega un registro de inventario. Antes de cargarlo controla que el código no exista,
+    # que existan el producto y la categoría, que la categoría esté activa y que el producto
+    # no tenga stock en otra categoría. Devuelve el código si se agregó, para el historial.
     codigo = pedir_codigo("\nIngrese el código del nuevo registro de inventario (formato INV-0000) (o 'volver' para cancelar): ", FORMATO_INVENTARIO)
     if codigo is None:
         print("Operación cancelada.")
@@ -799,9 +799,11 @@ def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_cod
         if indice_cat == -1:
             print("Error: La categoría no existe en el sistema. Alta cancelada.")
             return
+        # No se carga stock en una categoría inactiva
         if cat_estados[indice_cat] == 0:
             print("Error: La categoría está inactiva. No se puede cargar stock. Alta cancelada.")
             return
+        # Regla de una categoría por producto. Se pasa -1 porque en el alta no hay registro propio para ignorar
         categoria_en_conflicto = buscar_categoria_en_conflicto(inv_prods, inv_cats, cod_prod, cod_cat, -1)
         if categoria_en_conflicto is not None:
             print("Error: El producto " + cod_prod + " ya tiene stock en la categoría " + categoria_en_conflicto + ". Un producto solo puede pertenecer a una categoría. Use esa categoría o dé de baja sus otros registros de inventario. Alta cancelada.")
@@ -812,6 +814,7 @@ def alta_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_cod
             return
         deposito = solicitar_opcion_menu("Ingrese el número de depósito (1, 2 o 3): ", 1, 3)
         
+        # El registro nuevo se agrega en todas las listas paralelas, así quedan alineadas
         inv_cods.append(codigo)
         inv_prods.append(cod_prod)
         inv_cats.append(cod_cat)
@@ -838,6 +841,8 @@ def baja_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps):
         return codigo
 
 def modificar_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, prod_codigos, cat_codigos, cat_estados):
+    # Modifica producto, categoría, cantidad y depósito de un registro, con las mismas
+    # validaciones que el alta. Devuelve el código si se modificó, para el historial.
     codigo = pedir_codigo("\nIngrese el código de inventario a modificar (formato INV-0000) (o 'volver' para cancelar): ", FORMATO_INVENTARIO)
     if codigo is None:
         print("Operación cancelada.")
@@ -862,9 +867,11 @@ def modificar_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_deps, pro
         if indice_cat == -1:
             print("Error: La categoría no existe. Modificación cancelada.")
             return
+        # No se asigna stock a una categoría inactiva
         if cat_estados[indice_cat] == 0:
             print("Error: La categoría está inactiva. No se puede asignar stock a esta categoría. Modificación cancelada.")
             return
+        # Regla de una categoría por producto. Se pasa el índice del registro para que no cuente como conflicto
         categoria_en_conflicto = buscar_categoria_en_conflicto(inv_prods, inv_cats, nuevo_cod_prod, nuevo_cod_cat, indice)
         if categoria_en_conflicto is not None:
             print("Error: El producto " + nuevo_cod_prod + " ya tiene stock en la categoría " + categoria_en_conflicto + ". Un producto solo puede pertenecer a una categoría. Use esa categoría o dé de baja sus otros registros de inventario. Modificación cancelada.")
@@ -903,39 +910,36 @@ def generar_reporte_inventario(inv_cods, inv_prods, inv_cats, inv_cants, inv_dep
     return "\n--- LISTA DE INVENTARIO ---\n" + reporte
 
 def consulta_por_deposito(inv_cods, inv_deps, inv_prods, inv_cants):
-    dep_buscado = solicitar_opcion_menu("\nIngrese el número de depósito a consultar (1, 2 o 3): ", 1, 3)  # Pedimos y validamos el depósito (1, 2 o 3)
+    dep_buscado = solicitar_opcion_menu("\nIngrese el número de depósito a consultar (1, 2 o 3): ", 1, 3)
     
+    # filter: índices del inventario que están en este depósito
     indices = list(filter(lambda i: inv_deps[i] == dep_buscado, range(len(inv_cods))))
-    # ↑ FILTER con UNA sola condición: nos quedamos con los índices donde el depósito de esa fila coincide
     
-    if not indices:  # Si no encontramos ninguna fila en ese depósito
-        print("No hay stock registrado en este depósito.")  # Avisamos que no hay resultados
-    else:  # Si encontramos al menos una fila
-        print("\n--- STOCK DEL DEPÓSITO", dep_buscado, "---")  # Encabezado con el depósito buscado
-        for i in indices:  # Recorremos los índices filtrados
+    if not indices:
+        print("No hay stock registrado en este depósito.")
+    else:
+        print("\n--- STOCK DEL DEPÓSITO", dep_buscado, "---")
+        # No se muestra el depósito en cada fila porque ya lo eligió el usuario
+        for i in indices:
             print("Cód Inv:", inv_cods[i], "| Producto:", inv_prods[i], "| Cantidad:", inv_cants[i])
-            # ↑ No mostramos categoría ni depósito porque no aportan info nueva:
-            # el depósito ya lo eligió el usuario, y la categoría no fue criterio de búsqueda
 
 def consulta_unidades_categoria_deposito(inv_cods, inv_cats, inv_prods, inv_cants, inv_deps):
-    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)  # Pedimos y validamos el código de categoría
-    if cat_buscada is None:  # pedir_codigo devuelve None si el usuario escribió 'volver'
+    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)
+    if cat_buscada is None:  # el usuario escribió 'volver'
         return
-    dep_buscado = solicitar_opcion_menu("Ingrese el número de depósito a consultar (1, 2 o 3): ", 1, 3)  # Pedimos y validamos el depósito (solo acepta 1, 2 o 3)
+    dep_buscado = solicitar_opcion_menu("Ingrese el número de depósito a consultar (1, 2 o 3): ", 1, 3)
+    # filter con doble condición: tienen que coincidir la categoría y el depósito
     indices = list(filter(lambda i: inv_cats[i] == cat_buscada and inv_deps[i] == dep_buscado, range(len(inv_cods))))
-    # ↑ FILTER con DOBLE condición: nos quedamos solo con los índices donde
-    # la categoría Y el depósito de esa fila coinciden con lo buscado (deben cumplirse las dos)
-    if not indices:  # Si la lista de índices quedó vacía (ninguna fila cumplió ambas condiciones)
-        print("No hay stock registrado para esta categoría en ese depósito.")  # Avisamos que no hay resultados
-    else:  # Si encontramos al menos un índice que cumple
-        print("\n--- UNIDADES DE LA CATEGORÍA", cat_buscada, "EN EL DEPÓSITO", dep_buscado, "---")  # Encabezado con los datos buscados
-        for i in indices:  # Recorremos únicamente los índices que pasaron el filtro
-            print("Cód Inv:", inv_cods[i], "| Producto:", inv_prods[i], "| Cantidad:", inv_cants[i])  # Imprimimos el detalle de cada fila encontrada
+    if not indices:
+        print("No hay stock registrado para esta categoría en ese depósito.")
+    else:
+        print("\n--- UNIDADES DE LA CATEGORÍA", cat_buscada, "EN EL DEPÓSITO", dep_buscado, "---")
+        for i in indices:
+            print("Cód Inv:", inv_cods[i], "| Producto:", inv_prods[i], "| Cantidad:", inv_cants[i])
+        # map: cantidades de esos registros. reduce: suma total, arrancando en 0
         cantidades = list(map(lambda i: inv_cants[i], indices))
-        # ↑ MAP: convertimos los índices filtrados en la lista real de cantidades
         total = reduce(lambda acumulado, actual: acumulado + actual, cantidades, 0)
-        # ↑ REDUCE: sumamos todas las cantidades para obtener el total acumulado, arrancando en 0
-        print("Cantidad total de unidades:", total)  # Mostramos el total calculado
+        print("Cantidad total de unidades:", total)
 
 
 # CONSULTAS TRANSVERSALES
@@ -1038,7 +1042,7 @@ def consulta_productos_sin_stock(productos, inventario):
 def consulta_comparar_depositos(productos, inventario):
     deposito_a = solicitar_opcion_menu("\nIngrese el primer depósito a comparar (1, 2 o 3): ", 1, 3)
     deposito_b = solicitar_opcion_menu("Ingrese el segundo depósito a comparar (1, 2 o 3): ", 1, 3)
-    # Nueva validación: no tiene sentido comparar un depósito consigo mismo
+    # No tiene sentido comparar un depósito consigo mismo
     while deposito_b == deposito_a:
         print("Error: Los depósitos a comparar deben ser distintos.")
         deposito_b = solicitar_opcion_menu("Ingrese el segundo depósito a comparar (1, 2 o 3): ", 1, 3)
@@ -1053,25 +1057,16 @@ def consulta_comparar_depositos(productos, inventario):
 
 
 
-# ARCHIVO DE HISTORIAL DE MOVIMIENTOS
-# Ruta relativa: el archivo se crea en la carpeta desde donde se ejecuta el programa.
-# No hace falta que exista al arrancar, se crea solo con el primer movimiento registrado.
-
+# ARCHIVOS DE TEXTO
+# Los dos archivos usan ruta relativa: se crean en la carpeta desde donde se ejecuta el programa.
+# No hace falta que existan al arrancar, se crean con la primera operación que se registra.
 ARCHIVO_MOVIMIENTOS = "movimientos.txt"
-
-# ARCHIVO DE HISTORIAL DE STOCK
-# Ruta relativa: el archivo se crea en la carpeta desde donde se ejecuta el programa.
-# No hace falta que exista al arrancar, se crea solo con la primera operación de producto o inventario.
-
 ARCHIVO_HISTORIAL_STOCK = "historial_stock.txt"
 
-# ARCHIVOS DE TEXTO
 # Historial de movimientos: cada alta, baja o modificación del ABM se anota como una línea
 # en ARCHIVO_MOVIMIENTOS con el formato usuario,accion,entidad,codigo (ej: lzanino,alta,producto,PRD-111).
-
 # Los nombres de usuario y los códigos no tienen comas, por eso la coma sirve como separador.
-# El archivo no tiene que existir para que el programa funcione: se crea con el primer movimiento,
-# y si no se puede abrir se avisa y el programa sigue.
+# Si el archivo no se puede abrir, se avisa y el programa sigue.
 
 def armar_linea_movimiento(usuario, accion, entidad, codigo):
     # Arma la línea que se guarda en el archivo, terminada en salto de línea.
@@ -1271,8 +1266,7 @@ CLAVES_USUARIO = ("contrasena", "rol", "intentos_fallidos", "bloqueado")
 
 def entidad_valida(entidad, claves):
     # Controla que la entidad sea un diccionario con todas sus listas paralelas
-    # y que todas tengan el mismo largo (si una lista tiene un dato de menos, al recorrerlas
-    # con el mismo índice el programa se rompería con IndexError).
+    # y que todas tengan el mismo largo, porque se recorren con el mismo índice.
     if type(entidad) != dict:
         return False
     for clave in claves:
@@ -1285,8 +1279,8 @@ def entidad_valida(entidad, claves):
     return True
 
 def usuarios_validos(usuarios):
-    # Controla que cada usuario sea un diccionario con todos sus datos.
-    # Si a un usuario le falta alguno (por ejemplo "bloqueado"), el login se rompería con KeyError.
+    # Controla que cada usuario sea un diccionario con todos sus datos,
+    # porque el login los usa (por ejemplo "bloqueado").
     if type(usuarios) != dict:
         return False
     for datos_usuario in usuarios.values():
@@ -1325,8 +1319,8 @@ def cargar_datos():
         print("No se pudo abrir " + ARCHIVO_DATOS + ". Se cargan los datos iniciales.")
         return datos_por_defecto()
     except ValueError:
-        # json.load lanza JSONDecodeError si el texto no es un JSON válido (archivo cortado o editado mal).
-        # JSONDecodeError es un tipo de ValueError, por eso alcanza con atrapar ValueError.
+        # json.load da un error de tipo ValueError si el archivo no es un JSON válido
+        # (por ejemplo, si quedó cortado o se editó mal).
         print("El archivo " + ARCHIVO_DATOS + " está dañado. Se cargan los datos iniciales.")
         return datos_por_defecto()
 
@@ -1346,13 +1340,13 @@ def guardar_datos(datos):
     except OSError:
         print("No se pudieron guardar los datos en " + ARCHIVO_DATOS + ".")
         return False
+
 # SUBMENÚS DEL PROGRAMA PRINCIPAL
 # Cada submenú recibe los diccionarios que necesita y saca de ellos sus listas paralelas.
-# Son alias: apuntan a la MISMA lista que guarda el diccionario (no son copias), por eso
-# las altas, bajas y modificaciones que se hacen acá se ven en el resto del sistema.
-
-# Los submenús del ABM también reciben el usuario que inició sesión: cuando una operación
-# se completa, la anotan en el historial
+# Las variables apuntan a las mismas listas del diccionario (no son copias), así que los cambios
+# que se hacen acá quedan en los datos del sistema.
+# Los submenús del ABM también reciben el usuario que inició sesión y el diccionario completo de datos:
+# cuando una operación se completa, la anotan en el historial y guardan los datos en el JSON.
 def menu_productos(productos, inventario, categorias, usuario, datos):
     prod_codigos = productos["codigos"]
     prod_nombres = productos["nombres"]
@@ -1529,8 +1523,7 @@ def menu_consultas(productos, categorias, inventario):
 
 # PROGRAMA PRINCIPAL (MENÚ)
 def main():
-    # La carga del JSON está acá adentro (y no suelta al principio del archivo) para que no se
-    # ejecute cuando pruebas_sgi.py hace "import sgi".
+    # Los datos se cargan dentro de main() para que no se carguen cuando pruebas_sgi.py importa este archivo.
     datos = cargar_datos()
     usuarios = datos["usuarios"]
     productos = datos["productos"]
@@ -1539,9 +1532,9 @@ def main():
 
     # Manejo de interrupciones (Agustín Poggi - Segunda Parte):
     # Si el usuario corta el programa con Ctrl+C (KeyboardInterrupt) o se cierra la entrada de datos con
-    # Ctrl+D / Ctrl+Z (EOFError), Python terminaba mostrando un error técnico en pantalla.
-    # Ahora se atrapan solo esas dos excepciones (agrupadas en una tupla) y se muestra un mensaje claro.
-    # El bloque finally se ejecuta siempre, haya o no excepción, para mostrar el mensaje de salida.
+    # Ctrl+D / Ctrl+Z (EOFError), se muestra un mensaje en lugar del error de Python.
+    # Las dos excepciones van agrupadas en una tupla. El finally se ejecuta siempre:
+    # guarda los datos y muestra el mensaje de salida.
     try:
         usuario_actual = iniciar_sesion(usuarios)
         # El login puede cambiar intentos fallidos y bloqueos: se guarda para que no se pierdan.
