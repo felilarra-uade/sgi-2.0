@@ -35,8 +35,3 @@ env/
 # Otros
 .DS_Store
 *.log
-
-# Archivos de datos que genera el programa al ejecutarse
-datos_sgi.json
-movimientos.txt
-historial_stock.txt
