@@ -315,7 +315,9 @@ def iniciar_sesion(usuarios):
             print("Contraseña incorrecta. Intente nuevamente.\n")
             user_data["intentos_fallidos"] += 1
             intentos += 1
-            if user_data["intentos_fallidos"] >= 3:
+            # El admin no se bloquea: es el único que puede desbloquear usuarios.
+            # Si quedara bloqueado, nadie podría desbloquearlo desde el sistema.
+            if user_data["intentos_fallidos"] >= 3 and user_data["rol"] != "admin":
                 user_data["bloqueado"] = True
                 print("!!!!!!!! El usuario ha sido bloqueado por 3 intentos fallidos. !!!!!!!! \n")
         elif user_data["contrasena"] == input_password:
@@ -355,6 +357,8 @@ def desbloquear_usuario(usuarios, nombre_usuario):
         user_data["bloqueado"] = False
         user_data["intentos_fallidos"] = 0
         print(f"Usuario '{nombre_usuario}' desbloqueado exitosamente.")
+    else:
+        print(f"El usuario '{nombre_usuario}' no está bloqueado.")
 
 def administrar_usuarios_bloqueados(usuarios):
     # Muestra los usuarios bloqueados y permite al admin desbloquear a uno,
@@ -730,7 +734,9 @@ def consulta_por_categoria(categoria, inventario):
     inv_cants = inventario["cantidades"]     
     inv_deps = inventario["depositos"]      
 
-    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00): ", FORMATO_CATEGORIA)  # Pedimos y validamos el formato del código
+    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)  # Pedimos y validamos el formato del código
+    if cat_buscada is None:  # pedir_codigo devuelve None si el usuario escribió 'volver'
+        return
 
     indice_cat = buscar_indice(cat_codigos, cat_buscada)  # Buscamos si la categoría existe realmente en el sistema
     if indice_cat == -1:  # Si no la encontramos entre las categorías cargadas
@@ -903,7 +909,9 @@ def consulta_por_deposito(inv_cods, inv_deps, inv_prods, inv_cants):
             # el depósito ya lo eligió el usuario, y la categoría no fue criterio de búsqueda
 
 def consulta_unidades_categoria_deposito(inv_cods, inv_cats, inv_prods, inv_cants, inv_deps):
-    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00): ", FORMATO_CATEGORIA)  # Pedimos y validamos el código de categoría
+    cat_buscada = pedir_codigo("\nIngrese el código de categoría a consultar (formato CAT-00) (o 'volver' para cancelar): ", FORMATO_CATEGORIA)  # Pedimos y validamos el código de categoría
+    if cat_buscada is None:  # pedir_codigo devuelve None si el usuario escribió 'volver'
+        return
     dep_buscado = solicitar_opcion_menu("Ingrese el número de depósito a consultar (1, 2 o 3): ", 1, 3)  # Pedimos y validamos el depósito (solo acepta 1, 2 o 3)
     indices = list(filter(lambda i: inv_cats[i] == cat_buscada and inv_deps[i] == dep_buscado, range(len(inv_cods))))
     # ↑ FILTER con DOBLE condición: nos quedamos solo con los índices donde
