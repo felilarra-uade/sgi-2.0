@@ -32,6 +32,9 @@ def convertir_entero_positivo(texto):
         raise ValueError("Debe ingresar un número entero, sin letras, símbolos ni decimales.")
     if valor <= 0:
         raise ValueError("El número debe ser mayor a 0.")
+    # Tope máximo: con cantidades enormes la cuenta cantidad x precio no se puede hacer y el programa se cortaba.
+    if valor > 1000000:
+        raise ValueError("La cantidad no puede superar 1000000 de unidades.")
     return valor
 
 def convertir_float_positivo(texto):
@@ -49,6 +52,9 @@ def convertir_float_positivo(texto):
         raise ValueError("El número ingresado no es válido (es infinito o demasiado grande).")
     if valor <= 0:  # también descarta "-inf"
         raise ValueError("El número debe ser mayor a 0.")
+    # Tope máximo: con valores exagerados los totales de stock daban infinito.
+    if valor > 100000000:
+        raise ValueError("El número no puede superar 100000000.")
     return valor
 
 # Usada para validar las opciones de menú, asegurando que el usuario ingrese un número dentro del rango permitido.
@@ -346,6 +352,7 @@ def listar_usuarios_bloqueados(usuarios):
             print("Usuario:", nombre_usuario, "| Rol:", datos["rol"], "| Intentos fallidos:", datos["intentos_fallidos"])
     if not encontrado:
         print("No hay usuarios bloqueados.")
+    return encontrado
 
 def desbloquear_usuario(usuarios, nombre_usuario):
     user_data = buscar_usuario(usuarios, nombre_usuario)
@@ -363,7 +370,9 @@ def desbloquear_usuario(usuarios, nombre_usuario):
 def administrar_usuarios_bloqueados(usuarios):
     # Muestra los usuarios bloqueados y permite al admin desbloquear a uno,
     # o escribir 'volver' para salir sin hacer nada.
-    listar_usuarios_bloqueados(usuarios)
+    # Si no hay usuarios bloqueados, no tiene sentido pedir uno para desbloquear.
+    if not listar_usuarios_bloqueados(usuarios):
+        return
     nombre_usuario = pedir_texto("\nIngrese el nombre de usuario a desbloquear (o 'volver' para cancelar): ")
     # pedir_texto ya devuelve None cuando el usuario escribe 'volver'
     if nombre_usuario is None:
